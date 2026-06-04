@@ -1,0 +1,37 @@
+<div class="panel">
+  <label class="panel-label" for="fs-save-content">Content to save</label>
+  <textarea
+    id="fs-save-content"
+    class="panel-textarea"
+    [ngModel]="content()"
+    (ngModelChange)="content.set($event)"
+    rows="7"
+    aria-describedby="fs-save-hint"
+  ></textarea>
+
+  <button
+    class="panel-button"
+    type="button"
+    [disabled]="!content().trim()"
+    (click)="onSave()"
+  >
+    💾 Save to disk
+  </button>
+
+  <p id="fs-save-hint" class="panel-hint">
+    Opens a save dialog via <code>showSaveFilePicker()</code>.
+    Writes via <code>handle.createWritable()</code> → <code>writable.write()</code> → <code>writable.close()</code>.
+  </p>
+
+  @if (feedback()) {
+    <p
+      class="panel-feedback"
+      [class.panel-feedback--success]="feedbackType() === 'success'"
+      [class.panel-feedback--error]="feedbackType() === 'error'"
+      [attr.role]="feedbackType() === 'error' ? 'alert' : 'status'"
+      aria-live="polite"
+    >
+      {{ feedback() }}
+    </p>
+  }
+</div>

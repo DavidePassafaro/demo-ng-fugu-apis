@@ -1,0 +1,59 @@
+<article class="file-system-page">
+  <header class="page-header">
+    <span class="page-icon" aria-hidden="true">📁</span>
+    <div>
+      <h1 class="page-title">File System Access API</h1>
+      <p class="page-subtitle">
+        Open, read, create and save files and directories on the local filesystem via
+        <code>showOpenFilePicker()</code>, <code>showSaveFilePicker()</code>
+        and <code>showDirectoryPicker()</code>.
+      </p>
+    </div>
+  </header>
+
+  @if (!isSupported) {
+    <div class="availability-banner availability-banner--error" role="alert">
+      <span aria-hidden="true">⚠️</span>
+      <span>
+        <strong>API not available.</strong>
+        This browser does not support the File System Access API.
+        Use Chrome or Edge 86+ on desktop.
+      </span>
+    </div>
+  } @else {
+    <div class="availability-banner availability-banner--ok" role="status">
+      <span aria-hidden="true">✓</span>
+      <span>
+        <strong>API available.</strong>
+        <code>showOpenFilePicker</code>, <code>showSaveFilePicker</code>
+        and <code>showDirectoryPicker</code> are all supported.
+      </span>
+    </div>
+
+    <div class="fs-panels">
+      <section class="fs-section" aria-labelledby="open-section-title">
+        <h2 id="open-section-title" class="section-title">
+          Open &amp; read a file
+          <code>showOpenFilePicker() · handle.getFile() · file.text()</code>
+        </h2>
+        <app-fs-open-panel (open)="openFile()" />
+      </section>
+
+      <section class="fs-section" aria-labelledby="save-section-title">
+        <h2 id="save-section-title" class="section-title">
+          Create &amp; save a file
+          <code>showSaveFilePicker() · handle.createWritable() · writable.write()</code>
+        </h2>
+        <app-fs-save-panel (save)="saveFile($event)" />
+      </section>
+
+      <section class="fs-section fs-section--wide" aria-labelledby="dir-section-title">
+        <h2 id="dir-section-title" class="section-title">
+          Browse a directory
+          <code>showDirectoryPicker() · for await (const [name, handle] of dirHandle)</code>
+        </h2>
+        <app-fs-dir-panel (open)="openDirectory()" />
+      </section>
+    </div>
+  }
+</article>

@@ -1,0 +1,45 @@
+<div class="panel">
+  <button class="panel-button" type="button" (click)="onOpen()">
+    📁 Open directory
+  </button>
+
+  <p class="panel-hint">
+    Opens the directory picker via <code>showDirectoryPicker()</code>.
+    Iterates entries with <code>for await (const [name, handle] of dirHandle)</code>.
+    One level deep — sub-directories are listed but not expanded.
+  </p>
+
+  @if (hasOpened() && !error()) {
+    <div class="dir-result">
+      <div class="dir-header">
+        <span class="dir-name">📁 {{ dirName() }}</span>
+        <span class="dir-stats">
+          {{ dirCount() }} folder{{ dirCount() !== 1 ? 's' : '' }},
+          {{ fileCount() }} file{{ fileCount() !== 1 ? 's' : '' }}
+        </span>
+      </div>
+
+      @if (entries().length === 0) {
+        <p class="panel-hint">This directory is empty.</p>
+      } @else {
+        <ul class="dir-list" role="list" aria-label="Directory entries">
+          @for (entry of entries(); track entry.name) {
+            <li class="dir-entry" [class.dir-entry--dir]="entry.kind === 'directory'">
+              <span class="dir-entry-icon" aria-hidden="true">
+                {{ entry.kind === 'directory' ? '📁' : '📄' }}
+              </span>
+              <span class="dir-entry-name">{{ entry.name }}</span>
+              <span class="dir-entry-kind">{{ entry.kind }}</span>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  }
+
+  @if (error()) {
+    <p class="panel-feedback panel-feedback--error" role="alert" aria-live="assertive">
+      {{ error() }}
+    </p>
+  }
+</div>

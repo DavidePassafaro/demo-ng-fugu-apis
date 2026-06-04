@@ -14,6 +14,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/apis/clipboard/clipboard').then((m) => m.Clipboard),
       },
       {
+        path: 'file-system',
+        loadComponent: () => import('./pages/apis/file-system/file-system').then((m) => m.FileSystem),
+      },
+      {
         path: 'web-share',
         loadComponent: () => import('./pages/apis/web-share/web-share').then((m) => m.WebShare),
       },

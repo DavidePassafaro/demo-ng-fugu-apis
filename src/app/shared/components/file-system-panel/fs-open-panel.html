@@ -1,0 +1,32 @@
+<div class="panel">
+  <button class="panel-button" type="button" (click)="onOpen()">
+    📂 Open file
+  </button>
+
+  <p class="panel-hint">
+    Opens the native file picker. Reads the file content via
+    <code>handle.getFile()</code> and <code>file.text()</code>.
+  </p>
+
+  @if (result()) {
+    <div class="fs-result">
+      <div class="fs-result-meta">
+        <span class="fs-badge">{{ result()!.name }}</span>
+        <span class="fs-badge fs-badge--muted">{{ result()!.mimeType || 'unknown type' }}</span>
+        <span class="fs-badge fs-badge--muted">{{ result()!.sizeLabel }}</span>
+      </div>
+      <pre class="fs-content">{{ result()!.content }}</pre>
+      @if (result()!.truncated) {
+        <p class="panel-hint panel-hint--warning">
+          Content truncated — showing first 4 000 characters.
+        </p>
+      }
+    </div>
+  }
+
+  @if (error()) {
+    <p class="panel-feedback panel-feedback--error" role="alert" aria-live="assertive">
+      {{ error() }}
+    </p>
+  }
+</div>

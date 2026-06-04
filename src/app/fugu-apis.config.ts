@@ -30,7 +30,7 @@ export const FUGU_APIS: FuguApi[] = [
     description: 'Open, read, modify and save files and directories directly from the local filesystem.',
     path: '/apis/file-system',
     icon: '📁',
-    available: false,
+    available: true,
   },
   {
     id: 'badging',
