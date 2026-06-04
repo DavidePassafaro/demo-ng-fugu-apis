@@ -1,0 +1,55 @@
+<div
+  class="received-area"
+  role="region"
+  aria-label="Files received via launch queue"
+  aria-live="polite"
+>
+  @if (!hasReceived()) {
+    <div class="received-empty">
+      <span aria-hidden="true">⏳</span>
+      <p>Consumer registered and listening.<br>Open a file from your OS to see it here.</p>
+    </div>
+  } @else if (files().length === 0 && !error()) {
+    <div class="received-empty">
+      <span aria-hidden="true">📭</span>
+      <p>Launch triggered but no files were attached.</p>
+    </div>
+  } @else {
+    <div class="received-files">
+      @for (file of files(); track file.name) {
+        <div class="received-file">
+          <div class="received-file-header">
+            <span class="file-badge">{{ file.name }}</span>
+            <span class="file-badge file-badge--muted">{{ file.mimeType || 'unknown' }}</span>
+            <span class="file-badge file-badge--muted">{{ file.sizeLabel }}</span>
+          </div>
+
+          @switch (file.displayType) {
+            @case ('image') {
+              <img
+                [src]="file.objectUrl"
+                class="received-image"
+                [alt]="file.name"
+              />
+            }
+            @case ('text') {
+              <pre class="received-text">{{ file.textContent }}</pre>
+              @if (file.truncated) {
+                <p class="received-truncated">Showing first 4 000 characters.</p>
+              }
+            }
+            @case ('binary') {
+              <p class="received-binary">Binary file — {{ file.sizeLabel }}</p>
+            }
+          }
+        </div>
+      }
+    </div>
+  }
+
+  @if (error()) {
+    <p class="panel-feedback panel-feedback--error" role="alert" aria-live="assertive">
+      {{ error() }}
+    </p>
+  }
+</div>

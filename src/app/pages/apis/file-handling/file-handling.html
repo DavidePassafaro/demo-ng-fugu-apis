@@ -1,0 +1,55 @@
+<article class="file-handling-page">
+  <header class="page-header">
+    <span class="page-icon" aria-hidden="true">🗂️</span>
+    <div>
+      <h1 class="page-title">File Handling API</h1>
+      <p class="page-subtitle">
+        Register a PWA as a file handler so the OS can open files directly into your app
+        via <code>window.launchQueue.setConsumer()</code>.
+      </p>
+    </div>
+  </header>
+
+  @if (!isSupported) {
+    <div class="availability-banner availability-banner--error" role="alert">
+      <span aria-hidden="true">⚠️</span>
+      <span>
+        <strong>API not available.</strong>
+        <code>window.launchQueue</code> is not supported in this browser.
+        Use Chrome or Edge 102+ on desktop.
+      </span>
+    </div>
+  } @else {
+    <div class="availability-banner availability-banner--ok" role="status">
+      <span aria-hidden="true">✓</span>
+      <span>
+        <strong>API available.</strong>
+        Consumer registered — open a registered file type from your OS to trigger it.
+      </span>
+    </div>
+  }
+
+  <div class="fh-panels">
+
+    <section class="fh-section fh-section--wide" aria-labelledby="install-section-title">
+      <h2 id="install-section-title" class="section-title">
+        PWA installation
+        <code>display-mode: standalone · beforeinstallprompt</code>
+      </h2>
+      <app-file-handling-install-panel
+        [isStandalone]="isStandalone"
+        [canInstall]="canInstall()"
+        (install)="install()"
+      />
+    </section>
+
+    <section class="fh-section fh-section--wide" aria-labelledby="files-section-title">
+      <h2 id="files-section-title" class="section-title">
+        Received files
+        <code>launchQueue.setConsumer() · handle.getFile()</code>
+      </h2>
+      <app-file-handling-consumer-panel />
+    </section>
+
+  </div>
+</article>

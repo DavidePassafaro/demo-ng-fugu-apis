@@ -33,6 +33,14 @@ export const FUGU_APIS: FuguApi[] = [
     available: true,
   },
   {
+    id: 'file-handling',
+    name: 'File Handling API',
+    description: 'Register the PWA as a file handler so the OS can open matching files directly into the app.',
+    path: '/apis/file-handling',
+    icon: '🗂️',
+    available: true,
+  },
+  {
     id: 'badging',
     name: 'Badging API',
     description: 'Display a numeric badge on the installed PWA icon to notify the user.',

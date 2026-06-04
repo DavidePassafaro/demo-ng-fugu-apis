@@ -1,0 +1,51 @@
+<div class="panel">
+  <p class="panel-hint">
+    File handling is declared in the Web App Manifest via the
+    <code>file_handlers</code> array. This app is already configured —
+    the snippet below reflects the actual <code>manifest.webmanifest</code>.
+  </p>
+
+  <div class="code-block">
+    <div class="code-block-header">
+      <span class="code-block-filename">manifest.webmanifest</span>
+      <span class="code-block-lang">JSON</span>
+    </div>
+    <pre class="code-block-content">"file_handlers": [
+  &#123;
+    "action": "/apis/file-handling",
+    "accept": &#123;
+      "text/plain":       [".txt"],
+      "text/markdown":    [".md"],
+      "application/json": [".json"],
+      "image/png":        [".png"],
+      "image/jpeg":       [".jpg", ".jpeg"]
+    &#125;,
+    "icons": [
+      &#123; "src": "icons/icon-192x192.png", "sizes": "192x192" &#125;
+    ],
+    "launch_type": "single-client"
+  &#125;
+]</pre>
+  </div>
+
+  <ul class="manifest-notes" aria-label="Key manifest fields">
+    <li>
+      <code>action</code> — URL the browser navigates to when a registered file is opened.
+      Set to <code>/apis/file-handling</code> so the handler lands on this page.
+    </li>
+    <li>
+      <code>accept</code> — MIME types and extensions this app claims.
+      The OS uses this to show the app in "Open with…" menus.
+    </li>
+    <li>
+      <code>launch_type</code> — <code>"single-client"</code> reuses an existing window
+      instead of opening a new one on each file open.
+    </li>
+  </ul>
+
+  <p class="panel-hint panel-hint--warning">
+    Manifest changes take effect only after the PWA is reinstalled.
+    If you updated <code>file_handlers</code> on an already-installed app,
+    uninstall and reinstall to pick up the new registrations.
+  </p>
+</div>

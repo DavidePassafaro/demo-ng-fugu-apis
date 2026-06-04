@@ -18,6 +18,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/apis/file-system/file-system').then((m) => m.FileSystem),
       },
       {
+        path: 'file-handling',
+        loadComponent: () => import('./pages/apis/file-handling/file-handling').then((m) => m.FileHandling),
+      },
+      {
         path: 'web-share',
         loadComponent: () => import('./pages/apis/web-share/web-share').then((m) => m.WebShare),
       },

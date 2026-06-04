@@ -1,0 +1,76 @@
+{
+  "name": "Project Fugu APIs",
+  "short_name": "Fugu APIs",
+  "description": "A showcase of modern browser capabilities from Project Fugu.",
+  "display": "standalone",
+  "scope": "./",
+  "start_url": "./",
+  "background_color": "#f8f9fa",
+  "theme_color": "#4f46e5",
+  "icons": [
+    {
+      "src": "icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "file_handlers": [
+    {
+      "action": "/apis/file-handling",
+      "accept": {
+        "text/plain":       [".txt"],
+        "text/markdown":    [".md"],
+        "application/json": [".json"],
+        "image/png":        [".png"],
+        "image/jpeg":       [".jpg", ".jpeg"]
+      },
+      "icons": [
+        { "src": "icons/icon-192x192.png", "sizes": "192x192", "type": "image/png" }
+      ],
+      "launch_type": "single-client"
+    }
+  ]
+}

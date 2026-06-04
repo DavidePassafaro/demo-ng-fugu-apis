@@ -1,0 +1,63 @@
+<div class="install-panel">
+  @if (isStandalone()) {
+    <div class="install-status install-status--ok">
+      <span class="install-status-icon" aria-hidden="true">✅</span>
+      <div>
+        <p class="install-status-title">Running as installed PWA</p>
+        <p class="install-status-body">
+          The app is running in standalone mode.
+          File handlers are registered and active — open a
+          <code>.txt</code>, <code>.md</code>, <code>.json</code>, <code>.png</code>
+          or <code>.jpeg</code> file from your OS file manager to trigger the handler.
+        </p>
+      </div>
+    </div>
+  } @else if (outcome() === 'accepted') {
+    <div class="install-status install-status--ok">
+      <span class="install-status-icon" aria-hidden="true">✅</span>
+      <div>
+        <p class="install-status-title">App installed successfully</p>
+        <p class="install-status-body">
+          Reopen the app from your desktop or app launcher to activate file handling.
+        </p>
+      </div>
+    </div>
+  } @else if (outcome() === 'dismissed') {
+    <div class="install-status install-status--warn">
+      <span class="install-status-icon" aria-hidden="true">⚠️</span>
+      <div>
+        <p class="install-status-title">Installation dismissed</p>
+        <p class="install-status-body">
+          You can install the app later using the browser's address bar icon or the
+          <strong>Install app</strong> option in the three-dot menu.
+        </p>
+      </div>
+    </div>
+  } @else if (canInstall()) {
+    <div class="install-status install-status--prompt">
+      <span class="install-status-icon" aria-hidden="true">📲</span>
+      <div>
+        <p class="install-status-title">Install to enable file handling</p>
+        <p class="install-status-body">
+          File handlers only work when the app is installed as a PWA and launched from the OS.
+          Install now to register the file handler with your system.
+        </p>
+        <button class="install-btn" type="button" (click)="onInstall()">
+          Install app
+        </button>
+      </div>
+    </div>
+  } @else {
+    <div class="install-status install-status--info">
+      <span class="install-status-icon" aria-hidden="true">💡</span>
+      <div>
+        <p class="install-status-title">Install this app to use file handling</p>
+        <p class="install-status-body">
+          Open the browser menu and select <strong>Install app</strong> or click the
+          install icon in the address bar.
+          File handlers are only active when the app runs in standalone mode.
+        </p>
+      </div>
+    </div>
+  }
+</div>
