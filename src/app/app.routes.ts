@@ -52,6 +52,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/apis/contact-picker/contact-picker').then((m) => m.ContactPicker),
       },
       {
+        path: 'screen-wake-lock',
+        loadComponent: () => import('./pages/apis/screen-wake-lock/screen-wake-lock').then((m) => m.ScreenWakeLock),
+      },
+      {
         path: '**',
         redirectTo: 'clipboard',
       },

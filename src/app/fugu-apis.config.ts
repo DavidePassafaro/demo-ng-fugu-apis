@@ -78,6 +78,6 @@ export const FUGU_APIS: FuguApi[] = [
     description: 'Prevent the device from dimming or locking the screen while the application is in use.',
     path: '/apis/screen-wake-lock',
     icon: '💡',
-    available: false,
+    available: true,
   },
 ];

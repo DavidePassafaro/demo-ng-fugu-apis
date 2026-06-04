@@ -1,0 +1,132 @@
+<article class="wake-lock-page">
+  <header class="page-header">
+    <span class="page-icon" aria-hidden="true">💡</span>
+    <div>
+      <h1 class="page-title">Screen Wake Lock API</h1>
+      <p class="page-subtitle">
+        Prevent the screen from dimming or locking using
+        <code>navigator.wakeLock.request('screen')</code>.
+      </p>
+    </div>
+  </header>
+
+  @if (!isSupported) {
+    <div class="availability-banner availability-banner--error" role="alert">
+      <span aria-hidden="true">⚠️</span>
+      <span>
+        <strong>API not available.</strong>
+        <code>navigator.wakeLock</code> is not supported in this browser.
+        Use Chrome, Edge or Safari 16.4+.
+      </span>
+    </div>
+  } @else {
+    <div class="availability-banner availability-banner--ok" role="status">
+      <span aria-hidden="true">✓</span>
+      <span>
+        <strong>API available.</strong>
+        Requires a secure context (HTTPS or localhost) and a visible page.
+      </span>
+    </div>
+  }
+
+  <div class="wl-layout">
+
+    <!-- Control panel -->
+    <section class="wl-section" aria-labelledby="control-title">
+      <h2 id="control-title" class="section-title">Control</h2>
+
+      <div class="wl-controls">
+        <button
+          type="button"
+          class="wl-btn wl-btn--acquire"
+          (click)="acquire()"
+          [disabled]="!isSupported || isActive()"
+          aria-label="Acquire screen wake lock"
+        >
+          <span aria-hidden="true">🔆</span>
+          Acquire wake lock
+        </button>
+
+        <button
+          type="button"
+          class="wl-btn wl-btn--release"
+          (click)="release()"
+          [disabled]="!isSupported || !isActive()"
+          aria-label="Release screen wake lock"
+        >
+          <span aria-hidden="true">🌙</span>
+          Release wake lock
+        </button>
+      </div>
+
+      <!-- Code snippets -->
+      <div class="wl-code-block" aria-label="API call">
+        <p class="wl-code-header">Acquire</p>
+        <pre class="wl-code">const sentinel = await navigator.wakeLock.request('screen');</pre>
+      </div>
+      <div class="wl-code-block" aria-label="API call">
+        <p class="wl-code-header">Release</p>
+        <pre class="wl-code">await sentinel.release();</pre>
+      </div>
+      <div class="wl-code-block" aria-label="Re-acquire on visibility change">
+        <p class="wl-code-header">Re-acquire on visibility change</p>
+        <pre class="wl-code">document.addEventListener('visibilitychange', () => &#123;
+  if (document.visibilityState === 'visible') &#123;
+    sentinel = await navigator.wakeLock.request('screen');
+  &#125;
+&#125;);</pre>
+      </div>
+
+      @if (error()) {
+        <p class="wl-feedback wl-feedback--error" role="alert">{{ error() }}</p>
+      }
+    </section>
+
+    <!-- Status panel -->
+    <section class="wl-section" aria-labelledby="status-title">
+      <h2 id="status-title" class="section-title">Status</h2>
+
+      <div class="wl-status-card" [class.wl-status-card--active]="isActive()">
+        <!-- Animated indicator -->
+        <div class="wl-indicator" [class.wl-indicator--active]="isActive()" aria-hidden="true">
+          <div class="wl-indicator-ring"></div>
+          <span class="wl-indicator-icon">{{ isActive() ? '☀️' : '🌙' }}</span>
+        </div>
+
+        <div class="wl-status-text" role="status" [attr.aria-live]="'polite'">
+          @if (isActive()) {
+            <p class="wl-status-title wl-status-title--active">Wake lock active</p>
+            <p class="wl-status-desc">
+              The screen will stay on while this page is visible.<br>
+              Switching tabs or hiding the page will release the lock — it will be re-acquired automatically when you return.
+            </p>
+          } @else {
+            <p class="wl-status-title">Wake lock inactive</p>
+            <p class="wl-status-desc">
+              The screen may dim or lock according to device settings.
+            </p>
+            @if (releaseReason()) {
+              <p class="wl-status-reason">{{ releaseReason() }}</p>
+            }
+          }
+        </div>
+      </div>
+
+      <!-- Sentinel info -->
+      @if (isActive()) {
+        <div class="wl-sentinel-info" aria-label="WakeLockSentinel details">
+          <p class="wl-sentinel-label">WakeLockSentinel</p>
+          <div class="wl-sentinel-row">
+            <span class="wl-sentinel-key">type</span>
+            <code class="wl-sentinel-value">"screen"</code>
+          </div>
+          <div class="wl-sentinel-row">
+            <span class="wl-sentinel-key">released</span>
+            <code class="wl-sentinel-value">false</code>
+          </div>
+        </div>
+      }
+    </section>
+
+  </div>
+</article>
