@@ -41,6 +41,14 @@ export const FUGU_APIS: FuguApi[] = [
     available: true,
   },
   {
+    id: 'gamepad',
+    name: 'Gamepad API',
+    description: 'Read real-time controller input and trigger haptic feedback via the Gamepad API.',
+    path: '/apis/gamepad',
+    icon: '🎮',
+    available: true,
+  },
+  {
     id: 'badging',
     name: 'Badging API',
     description: 'Display a numeric badge on the installed PWA icon to notify the user.',

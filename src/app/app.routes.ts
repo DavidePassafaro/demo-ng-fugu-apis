@@ -26,6 +26,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/apis/web-share/web-share').then((m) => m.WebShare),
       },
       {
+        path: 'gamepad',
+        loadComponent: () => import('./pages/apis/gamepad/gamepad').then((m) => m.GamepadPage),
+      },
+      {
         path: '**',
         redirectTo: 'clipboard',
       },

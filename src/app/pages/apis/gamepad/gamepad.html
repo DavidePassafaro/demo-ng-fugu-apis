@@ -1,0 +1,54 @@
+<article class="gamepad-page">
+  <header class="page-header">
+    <span class="page-icon" aria-hidden="true">🎮</span>
+    <div>
+      <h1 class="page-title">Gamepad API</h1>
+      <p class="page-subtitle">
+        Read real-time controller input via <code>navigator.getGamepads()</code>
+        and trigger haptic feedback using <code>vibrationActuator.playEffect()</code>.
+      </p>
+    </div>
+  </header>
+
+  @if (!isSupported) {
+    <div class="availability-banner availability-banner--error" role="alert">
+      <span aria-hidden="true">⚠️</span>
+      <span>
+        <strong>API not available.</strong>
+        <code>navigator.getGamepads()</code> is not supported in this browser.
+        Use Chrome, Edge or Firefox 29+.
+      </span>
+    </div>
+  } @else {
+    <div class="availability-banner availability-banner--ok" role="status">
+      <span aria-hidden="true">✓</span>
+      <span>
+        <strong>API available.</strong>
+        Polling via <code>requestAnimationFrame</code> — connect a controller and press a button to start.
+      </span>
+    </div>
+  }
+
+  @if (isSupported) {
+    <section aria-label="Connected controllers" aria-live="polite">
+
+      @if (gamepads().length === 0) {
+        <div class="gp-empty">
+          <span aria-hidden="true">🕹️</span>
+          <p>No controller detected.</p>
+          <p class="gp-empty-hint">Connect a gamepad and press any button to activate it.</p>
+        </div>
+      } @else {
+        <div class="gp-list">
+          @for (gp of gamepads(); track gp.index) {
+            <app-gamepad-card
+              [gamepad]="gp"
+              (vibrate)="onVibrate($event)"
+            />
+          }
+        </div>
+      }
+
+    </section>
+  }
+</article>

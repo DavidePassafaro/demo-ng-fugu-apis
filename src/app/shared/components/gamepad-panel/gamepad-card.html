@@ -1,0 +1,130 @@
+<article class="gp-card" [attr.aria-label]="'Gamepad ' + gamepad().index + ': ' + gamepad().productName">
+
+  <!-- Header -->
+  <div class="gp-card-header">
+    <div class="gp-card-title">
+      <span class="gp-index" aria-hidden="true">{{ gamepad().index }}</span>
+      <div>
+        <p class="gp-product-name">{{ gamepad().productName }}</p>
+        <p class="gp-id">{{ gamepad().id }}</p>
+      </div>
+    </div>
+    <span class="gp-connected-badge" role="status">Connected</span>
+  </div>
+
+  <!-- Buttons -->
+  <section aria-label="Buttons">
+    <h3 class="gp-section-title">Buttons</h3>
+    <div class="gp-buttons-grid">
+      @for (row of buttonRows(); track $index) {
+        @for (btn of row; track btn.index) {
+          <div
+            class="gp-btn"
+            [class.gp-btn--pressed]="btn.state.pressed"
+            [class.gp-btn--touched]="!btn.state.pressed && btn.state.touched"
+            [attr.aria-label]="btn.label + ' button ' + (btn.state.pressed ? 'pressed' : 'released')"
+            [attr.aria-pressed]="btn.state.pressed"
+          >
+            <span class="gp-btn-label">{{ btn.label }}</span>
+            <span class="gp-btn-value">{{ btn.state.value.toFixed(2) }}</span>
+          </div>
+        }
+      }
+    </div>
+  </section>
+
+  <!-- Axes & XY Graphs -->
+  <section aria-label="Analog sticks">
+    <h3 class="gp-section-title">Analog Sticks</h3>
+    <div class="gp-sticks">
+
+      <div class="gp-stick">
+        <p class="gp-stick-label">Left Stick</p>
+        <div class="gp-xy-graph" role="img" [attr.aria-label]="'Left stick: X=' + leftAxes().x.toFixed(2) + ' Y=' + leftAxes().y.toFixed(2)">
+          <div class="gp-xy-crosshair-h" aria-hidden="true"></div>
+          <div class="gp-xy-crosshair-v" aria-hidden="true"></div>
+          <div class="gp-xy-dot" aria-hidden="true" [style.left]="leftDotStyle().left" [style.top]="leftDotStyle().top"></div>
+        </div>
+        <div class="gp-axes-values" aria-hidden="true">
+          <span>X: {{ leftAxes().x.toFixed(3) }}</span>
+          <span>Y: {{ leftAxes().y.toFixed(3) }}</span>
+        </div>
+      </div>
+
+      <div class="gp-stick">
+        <p class="gp-stick-label">Right Stick</p>
+        <div class="gp-xy-graph" role="img" [attr.aria-label]="'Right stick: X=' + rightAxes().x.toFixed(2) + ' Y=' + rightAxes().y.toFixed(2)">
+          <div class="gp-xy-crosshair-h" aria-hidden="true"></div>
+          <div class="gp-xy-crosshair-v" aria-hidden="true"></div>
+          <div class="gp-xy-dot" aria-hidden="true" [style.left]="rightDotStyle().left" [style.top]="rightDotStyle().top"></div>
+        </div>
+        <div class="gp-axes-values" aria-hidden="true">
+          <span>X: {{ rightAxes().x.toFixed(3) }}</span>
+          <span>Y: {{ rightAxes().y.toFixed(3) }}</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- All axes raw values -->
+    @if (gamepad().axes.length > 4) {
+      <div class="gp-extra-axes" aria-label="Extra axes">
+        @for (axis of gamepad().axes; track $index) {
+          @if ($index >= 4) {
+            <div class="gp-axis-row">
+              <span class="gp-axis-label">Axis {{ $index }}</span>
+              <div class="gp-axis-bar-track" role="progressbar" [attr.aria-valuenow]="axis" aria-valuemin="-1" aria-valuemax="1">
+                <div class="gp-axis-bar" [style.width]="((axis + 1) / 2 * 100) + '%'"></div>
+              </div>
+              <span class="gp-axis-value">{{ axis.toFixed(3) }}</span>
+            </div>
+          }
+        }
+      </div>
+    }
+  </section>
+
+  <!-- Vibration -->
+  <section aria-label="Vibration controls">
+    <h3 class="gp-section-title">Vibration</h3>
+    <div class="gp-vibration">
+      <label class="gp-vibration-label">
+        Weak motor
+        <input
+          type="range" min="0" max="1" step="0.01"
+          [value]="weakMagnitude()"
+          (input)="weakMagnitude.set(+$any($event.target).value)"
+          class="gp-range"
+          [attr.aria-valuenow]="weakMagnitude()"
+        />
+        <span class="gp-range-value">{{ weakMagnitude().toFixed(2) }}</span>
+      </label>
+      <label class="gp-vibration-label">
+        Strong motor
+        <input
+          type="range" min="0" max="1" step="0.01"
+          [value]="strongMagnitude()"
+          (input)="strongMagnitude.set(+$any($event.target).value)"
+          class="gp-range"
+          [attr.aria-valuenow]="strongMagnitude()"
+        />
+        <span class="gp-range-value">{{ strongMagnitude().toFixed(2) }}</span>
+      </label>
+      <label class="gp-vibration-label">
+        Duration (ms)
+        <input
+          type="range" min="500" max="5000" step="500"
+          [value]="duration()"
+          (input)="duration.set(+$any($event.target).value)"
+          class="gp-range"
+          [attr.aria-valuenow]="duration()"
+        />
+        <span class="gp-range-value">{{ duration() }} ms</span>
+      </label>
+      <button class="gp-vibrate-btn" type="button" (click)="triggerVibrate()">
+        Rumble 🎮
+      </button>
+    </div>
+  </section>
+
+</article>
