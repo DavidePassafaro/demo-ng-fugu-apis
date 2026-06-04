@@ -1,0 +1,59 @@
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-brand">
+      <span class="header-logo" aria-hidden="true">🐡</span>
+      <span class="header-title">Project Fugu APIs</span>
+    </div>
+    <nav aria-label="Main navigation">
+      <a href="https://developer.chrome.com/docs/capabilities" target="_blank" rel="noopener noreferrer" class="header-link">
+        Documentation
+      </a>
+    </nav>
+  </div>
+</header>
+
+<main class="home-main">
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero-inner">
+      <h1 id="hero-title" class="hero-title">
+        Advanced Capabilities for the Web
+      </h1>
+      <p class="hero-description">
+        <strong>Project Fugu</strong> is an initiative by Google, Microsoft, Intel and other partners
+        to close the gap between native applications and web apps.
+        This demo explores the new browser APIs that bring system-level features to the web.
+      </p>
+    </div>
+  </section>
+
+  <section class="apis-section" aria-labelledby="apis-title">
+    <div class="apis-section-inner">
+      <h2 id="apis-title" class="apis-title">Explore the APIs</h2>
+      <ul class="apis-grid" role="list">
+        @for (api of apis; track api.id) {
+          <li>
+            @if (api.available) {
+              <a [routerLink]="api.path" class="api-card api-card--available" [attr.aria-label]="api.name + ': ' + api.description">
+                <span class="api-card-icon" aria-hidden="true">{{ api.icon }}</span>
+                <div class="api-card-body">
+                  <h3 class="api-card-name">{{ api.name }}</h3>
+                  <p class="api-card-description">{{ api.description }}</p>
+                </div>
+                <span class="api-card-badge api-card-badge--available">Available</span>
+              </a>
+            } @else {
+              <div class="api-card api-card--unavailable" [attr.aria-label]="api.name + ': ' + api.description + ' (coming soon)'">
+                <span class="api-card-icon" aria-hidden="true">{{ api.icon }}</span>
+                <div class="api-card-body">
+                  <h3 class="api-card-name">{{ api.name }}</h3>
+                  <p class="api-card-description">{{ api.description }}</p>
+                </div>
+                <span class="api-card-badge api-card-badge--soon">Coming soon</span>
+              </div>
+            }
+          </li>
+        }
+      </ul>
+    </div>
+  </section>
+</main>

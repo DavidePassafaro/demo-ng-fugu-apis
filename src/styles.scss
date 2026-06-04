@@ -1,1 +1,50 @@
-/* You can add global styles to this file, and also import other style files */
+/* Design tokens */
+:root {
+  --color-bg: #f8f9fa;
+  --color-surface: #ffffff;
+  --color-border: #e5e7eb;
+  --color-text-primary: #111827;
+  --color-text-secondary: #6b7280;
+  --color-text-muted: #9ca3af;
+  --color-accent: #4f46e5;
+  --color-accent-hover: #4338ca;
+  --color-accent-subtle: #eef2ff;
+  --color-accent-ring: rgba(79, 70, 229, 0.2);
+  --color-code-bg: #f3f4f6;
+  --color-success: #059669;
+  --color-success-subtle: #d1fae5;
+  --color-error: #dc2626;
+  --color-error-subtle: #fee2e2;
+  --color-muted-subtle: #f3f4f6;
+}
+
+/* Reset */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  line-height: 1.5;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.2;
+}
+
+button {
+  font-family: inherit;
+}

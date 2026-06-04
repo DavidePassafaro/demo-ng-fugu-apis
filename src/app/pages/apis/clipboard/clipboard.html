@@ -1,0 +1,56 @@
+<article class="clipboard-page">
+  <header class="page-header">
+    <span class="page-icon" aria-hidden="true">📋</span>
+    <div>
+      <h1 class="page-title">Clipboard API</h1>
+      <p class="page-subtitle">
+        Asynchronously read and write text, HTML and images to the system clipboard via
+        <code>navigator.clipboard</code>.
+      </p>
+    </div>
+  </header>
+
+  @if (!isSupported) {
+    <div class="availability-banner availability-banner--error" role="alert">
+      <span aria-hidden="true">⚠️</span>
+      <span>
+        <strong>API not available.</strong>
+        This browser does not support <code>navigator.clipboard</code>.
+        Please update your browser or use a recent version of Chrome, Edge or Firefox.
+      </span>
+    </div>
+  } @else {
+    <div class="availability-banner availability-banner--ok" role="status">
+      <span aria-hidden="true">✓</span>
+      <span>
+        <strong>API available.</strong>
+        @if (supportsRichContent) {
+          <code>ClipboardItem</code> supported — you can copy text, HTML and images.
+        } @else {
+          <code>ClipboardItem</code> not supported in this browser — only plain text is available.
+        }
+      </span>
+    </div>
+
+    <div class="clipboard-panels">
+      <section class="clipboard-section" aria-labelledby="write-section-title">
+        <h2 id="write-section-title" class="section-title">
+          Write to clipboard
+          <code>clipboard.writeText() · clipboard.write()</code>
+        </h2>
+        <app-clipboard-write-panel
+          [supportsRichContent]="supportsRichContent"
+          (write)="write($event)"
+        />
+      </section>
+
+      <section class="clipboard-section" aria-labelledby="read-section-title">
+        <h2 id="read-section-title" class="section-title">
+          Read from clipboard
+          <code>clipboard.read()</code>
+        </h2>
+        <app-clipboard-read-panel (read)="read()" />
+      </section>
+    </div>
+  }
+</article>

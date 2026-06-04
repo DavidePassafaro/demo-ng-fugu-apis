@@ -1,0 +1,29 @@
+<div class="apis-shell">
+  <nav class="sidebar" aria-label="API navigation">
+    <div class="sidebar-header">
+      <a routerLink="/" class="sidebar-back" aria-label="Back to home">
+        <span aria-hidden="true">←</span> Home
+      </a>
+      <span class="sidebar-title">Fugu APIs</span>
+    </div>
+    <ul class="sidebar-nav" role="list">
+      @for (api of apis; track api.id) {
+        <li>
+          <a
+            [routerLink]="api.path"
+            routerLinkActive="sidebar-nav-link--active"
+            class="sidebar-nav-link"
+            [attr.aria-label]="api.name"
+          >
+            <span class="sidebar-nav-icon" aria-hidden="true">{{ api.icon }}</span>
+            <span class="sidebar-nav-name">{{ api.name }}</span>
+          </a>
+        </li>
+      }
+    </ul>
+  </nav>
+
+  <main class="apis-main" id="main-content">
+    <router-outlet />
+  </main>
+</div>

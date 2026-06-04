@@ -1,0 +1,57 @@
+<div class="panel">
+  <div
+    class="read-results"
+    role="region"
+    aria-label="Content read from clipboard"
+    aria-live="polite"
+  >
+    @if (!hasRead()) {
+      <p class="panel-placeholder">Press the button to read the clipboard contents.</p>
+    } @else if (results().length === 0 && !error()) {
+      <p class="panel-placeholder">The clipboard is empty.</p>
+    } @else {
+      @for (item of results(); track item.mimeType) {
+        <div class="read-item">
+          <span class="read-item-type">{{ item.mimeType }}</span>
+
+          @switch (item.displayType) {
+            @case ('text') {
+              <pre class="panel-read-text">{{ item.textValue }}</pre>
+            }
+            @case ('html') {
+              <details class="html-details">
+                <summary class="html-summary">HTML source</summary>
+                <pre class="panel-read-text">{{ item.textValue }}</pre>
+              </details>
+              <div
+                class="html-preview"
+                [innerHTML]="item.textValue"
+                aria-label="Rendered HTML preview"
+              ></div>
+            }
+            @case ('image') {
+              <img
+                [src]="item.objectUrl"
+                class="read-image"
+                alt="Image from clipboard"
+              />
+            }
+            @case ('binary') {
+              <p class="panel-hint">Binary data — {{ item.size }} bytes</p>
+            }
+          }
+        </div>
+      }
+    }
+  </div>
+
+  <button class="panel-button" type="button" (click)="onRead()">
+    📥 Read from clipboard
+  </button>
+
+  @if (error()) {
+    <p class="panel-feedback panel-feedback--error" role="alert" aria-live="assertive">
+      {{ error() }}
+    </p>
+  }
+</div>

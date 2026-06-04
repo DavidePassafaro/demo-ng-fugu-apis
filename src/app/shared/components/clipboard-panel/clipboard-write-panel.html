@@ -1,0 +1,104 @@
+<div class="panel">
+  <!-- Tab bar -->
+  <div class="tab-bar" role="tablist" aria-label="Content type to copy">
+    @for (tab of tabs; track tab.id) {
+      <button
+        role="tab"
+        type="button"
+        class="tab-btn"
+        [class.tab-btn--active]="activeTab() === tab.id"
+        [attr.aria-selected]="activeTab() === tab.id"
+        [attr.aria-disabled]="tab.id !== 'text' && isTabDisabled()"
+        [disabled]="tab.id !== 'text' && isTabDisabled()"
+        (click)="selectTab(tab.id)"
+        [attr.id]="'write-tab-' + tab.id"
+        [attr.aria-controls]="'write-panel-' + tab.id"
+      >
+        {{ tab.label }}
+
+        <span class="tab-badge">{{ tab.description }}</span>
+      </button>
+    }
+  </div>
+
+  <!-- Tab: Text -->
+  @if (activeTab() === 'text') {
+    <div class="tab-content" role="tabpanel" id="write-panel-text" aria-labelledby="write-tab-text">
+      <label class="panel-label" for="write-text-input">Text to copy</label>
+      <textarea
+        id="write-text-input"
+        class="panel-textarea"
+        [ngModel]="textValue()"
+        (ngModelChange)="textValue.set($event)"
+        placeholder="Write something to copy to the clipboard..."
+        rows="5"
+      ></textarea>
+    </div>
+  }
+
+  <!-- Tab: HTML -->
+  @if (activeTab() === 'html') {
+    <div class="tab-content" role="tabpanel" id="write-panel-html" aria-labelledby="write-tab-html">
+      <label class="panel-label" for="write-html-input">HTML markup to copy</label>
+      <textarea
+        id="write-html-input"
+        class="panel-textarea panel-textarea--code"
+        [ngModel]="htmlValue()"
+        (ngModelChange)="htmlValue.set($event)"
+        placeholder="<p>Copy <strong>formatted HTML</strong> to the clipboard.</p>"
+        rows="5"
+      ></textarea>
+      <p class="panel-hint">
+        Written as <code>text/html</code> with a <code>text/plain</code> fallback. Pasting into a
+        rich-text editor (Word, Google Docs…) will preserve the formatting.
+      </p>
+    </div>
+  }
+
+  <!-- Tab: Image -->
+  @if (activeTab() === 'image') {
+    <div
+      class="tab-content"
+      role="tabpanel"
+      id="write-panel-image"
+      aria-labelledby="write-tab-image"
+    >
+      <label class="panel-label" for="write-image-input">Select an image</label>
+      <label class="file-drop" for="write-image-input">
+        @if (imagePreviewUrl()) {
+          <img [src]="imagePreviewUrl()" alt="Preview of the selected image" class="file-preview" />
+        } @else {
+          <span class="file-drop-placeholder" aria-hidden="true">🖼️</span>
+          <span class="file-drop-text">Click to select a PNG image</span>
+        }
+      </label>
+      <input
+        id="write-image-input"
+        type="file"
+        accept="image/png"
+        class="visually-hidden"
+        (change)="onImageSelected($event)"
+        aria-label="Select a PNG image to copy"
+      />
+      <p class="panel-hint">
+        Only <code>image/png</code> is supported by the Clipboard API in most browsers.
+      </p>
+    </div>
+  }
+
+  <button class="panel-button" type="button" [disabled]="!canSubmit()" (click)="onWrite()">
+    📋 Copy to clipboard
+  </button>
+
+  @if (feedback()) {
+    <p
+      class="panel-feedback"
+      [class.panel-feedback--success]="feedbackType() === 'success'"
+      [class.panel-feedback--error]="feedbackType() === 'error'"
+      [attr.role]="feedbackType() === 'error' ? 'alert' : 'status'"
+      aria-live="polite"
+    >
+      {{ feedback() }}
+    </p>
+  }
+</div>
