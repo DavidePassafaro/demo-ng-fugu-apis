@@ -1,7 +1,40 @@
 <div class="apis-shell">
-  <nav class="sidebar" aria-label="API navigation">
+
+  <!-- Mobile topbar -->
+  <header class="mobile-topbar" aria-label="Mobile navigation bar">
+    <a routerLink="/" class="mobile-topbar-back" aria-label="Back to home">
+      <span aria-hidden="true">←</span>
+    </a>
+    <span class="mobile-topbar-title">Fugu APIs</span>
+    <button
+      type="button"
+      class="hamburger"
+      (click)="toggleMenu()"
+      [attr.aria-expanded]="menuOpen()"
+      aria-controls="sidebar"
+      aria-label="Toggle navigation menu"
+    >
+      @if (menuOpen()) {
+        <span class="hamburger-icon" aria-hidden="true">✕</span>
+      } @else {
+        <span class="hamburger-icon" aria-hidden="true">☰</span>
+      }
+    </button>
+  </header>
+
+  <!-- Backdrop -->
+  @if (menuOpen()) {
+    <div
+      class="sidebar-backdrop"
+      aria-hidden="true"
+      (click)="closeMenu()"
+    ></div>
+  }
+
+  <!-- Sidebar -->
+  <nav id="sidebar" class="sidebar" aria-label="API navigation" [attr.aria-hidden]="!menuOpen() ? 'true' : null">
     <div class="sidebar-header">
-      <a routerLink="/" class="sidebar-back" aria-label="Back to home">
+      <a routerLink="/" class="sidebar-back" aria-label="Back to home" (click)="closeMenu()">
         <span aria-hidden="true">←</span> Home
       </a>
       <span class="sidebar-title">Fugu APIs</span>
@@ -14,6 +47,7 @@
             routerLinkActive="sidebar-nav-link--active"
             class="sidebar-nav-link"
             [attr.aria-label]="api.name"
+            (click)="closeMenu()"
           >
             <span class="sidebar-nav-icon" aria-hidden="true">{{ api.icon }}</span>
             <span class="sidebar-nav-name">{{ api.name }}</span>
@@ -26,4 +60,5 @@
   <main class="apis-main" id="main-content">
     <router-outlet />
   </main>
+
 </div>
