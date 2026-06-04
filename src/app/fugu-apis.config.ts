@@ -70,7 +70,7 @@ export const FUGU_APIS: FuguApi[] = [
     description: 'Pick contacts from the device address book with explicit user permission.',
     path: '/apis/contact-picker',
     icon: '👤',
-    available: false,
+    available: true,
   },
   {
     id: 'screen-wake-lock',

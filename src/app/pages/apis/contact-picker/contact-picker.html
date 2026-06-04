@@ -1,0 +1,157 @@
+<article class="contact-picker-page">
+  <header class="page-header">
+    <span class="page-icon" aria-hidden="true">👤</span>
+    <div>
+      <h1 class="page-title">Contact Picker API</h1>
+      <p class="page-subtitle">
+        Let users share contacts from their device address book using
+        <code>navigator.contacts.select()</code> — no blanket access, one pick at a time.
+      </p>
+    </div>
+  </header>
+
+  @if (!isSupported) {
+    <div class="availability-banner availability-banner--error" role="alert">
+      <span aria-hidden="true">⚠️</span>
+      <span>
+        <strong>API not available.</strong>
+        The Contact Picker API requires a mobile browser — Chrome on Android or Safari on iOS.
+      </span>
+    </div>
+  } @else {
+    <div class="availability-banner availability-banner--ok" role="status">
+      <span aria-hidden="true">✓</span>
+      <span>
+        <strong>API available.</strong>
+        Supported properties loaded from <code>navigator.contacts.getProperties()</code>.
+      </span>
+    </div>
+  }
+
+  <div class="cp-layout">
+
+    <!-- Config panel -->
+    <section class="cp-section" aria-labelledby="config-title">
+      <h2 id="config-title" class="section-title">Request options</h2>
+
+      <!-- Property toggles -->
+      <fieldset class="cp-fieldset" [disabled]="!isSupported">
+        <legend class="cp-legend">Properties to request</legend>
+        <div class="cp-props" role="group" aria-label="Contact properties">
+          @for (prop of allProperties; track prop) {
+            <button
+              type="button"
+              class="prop-toggle"
+              [class.prop-toggle--selected]="isSelected(prop)"
+              [class.prop-toggle--unsupported]="!isPropertySupported(prop)"
+              (click)="toggleProperty(prop)"
+              [attr.aria-pressed]="isSelected(prop)"
+              [attr.aria-disabled]="!isPropertySupported(prop)"
+              [title]="!isPropertySupported(prop) ? 'Not supported on this device' : ''"
+            >
+              <span aria-hidden="true">{{ propertyLabels[prop].icon }}</span>
+              {{ propertyLabels[prop].label }}
+              @if (!isPropertySupported(prop)) {
+                <span class="prop-unsupported-badge" aria-hidden="true">✕</span>
+              }
+            </button>
+          }
+        </div>
+      </fieldset>
+
+      <!-- Multiple toggle -->
+      <label class="cp-toggle-row">
+        <input
+          type="checkbox"
+          class="cp-checkbox"
+          [checked]="multiple()"
+          (change)="multiple.set($any($event.target).checked)"
+          [disabled]="!isSupported"
+        />
+        <span class="cp-toggle-label">Allow multiple contacts</span>
+        <code class="cp-toggle-code">multiple: {{ multiple() }}</code>
+      </label>
+
+      <!-- Code preview -->
+      <div class="cp-code-block" aria-label="API call preview">
+        <p class="cp-code-header">API call</p>
+        <pre class="cp-code">navigator.contacts.select(
+  {{ '[' }}{{ [...selectedProperties()].map(p => '"' + p + '"').join(', ') }}{{ ']' }},
+  &#123; multiple: {{ multiple() }} &#125;
+)</pre>
+      </div>
+
+      <!-- Pick button -->
+      <button
+        type="button"
+        class="pick-btn"
+        (click)="pickContacts()"
+        [disabled]="!isSupported || selectedProperties().size === 0"
+      >
+        <span aria-hidden="true">📇</span>
+        Pick contact{{ multiple() ? 's' : '' }}
+      </button>
+
+      @if (error()) {
+        <p class="cp-error" role="alert">{{ error() }}</p>
+      }
+    </section>
+
+    <!-- Results panel -->
+    <section class="cp-section" aria-labelledby="results-title" aria-live="polite">
+      <h2 id="results-title" class="section-title">Selected contacts</h2>
+
+      @if (!picked()) {
+        <div class="cp-empty">
+          <span aria-hidden="true">📭</span>
+          <p>No contacts picked yet.<br>Use the picker to select contacts.</p>
+        </div>
+      } @else if (contacts().length === 0) {
+        <div class="cp-empty">
+          <span aria-hidden="true">📭</span>
+          <p>No contacts were returned.</p>
+        </div>
+      } @else {
+        <ul class="cp-contacts" role="list">
+          @for (contact of contacts(); track $index) {
+            <li class="cp-contact-card">
+
+              <!-- Avatar -->
+              <div class="cp-avatar" aria-hidden="true">
+                @if (contact.avatarUrl) {
+                  <img [src]="contact.avatarUrl" [alt]="contact.name?.[0] ?? 'Contact'" class="cp-avatar-img" />
+                } @else {
+                  <span>{{ (contact.name?.[0]?.[0] ?? '?').toUpperCase() }}</span>
+                }
+              </div>
+
+              <!-- Details -->
+              <div class="cp-contact-details">
+                @if (contact.name?.length) {
+                  <p class="cp-contact-name">{{ contact.name![0] }}</p>
+                }
+                @for (email of (contact.email ?? []); track email) {
+                  <p class="cp-contact-field">
+                    <span aria-hidden="true">✉️</span> {{ email }}
+                  </p>
+                }
+                @for (tel of (contact.tel ?? []); track tel) {
+                  <p class="cp-contact-field">
+                    <span aria-hidden="true">📞</span> {{ tel }}
+                  </p>
+                }
+                @for (addr of (contact.address ?? []); track $index) {
+                  <p class="cp-contact-field">
+                    <span aria-hidden="true">🏠</span> {{ formatAddress(addr) }}
+                  </p>
+                }
+              </div>
+
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+  </div>
+</article>

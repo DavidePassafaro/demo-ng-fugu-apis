@@ -48,6 +48,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/apis/badging/badging').then((m) => m.Badging),
       },
       {
+        path: 'contact-picker',
+        loadComponent: () => import('./pages/apis/contact-picker/contact-picker').then((m) => m.ContactPicker),
+      },
+      {
         path: '**',
         redirectTo: 'clipboard',
       },
