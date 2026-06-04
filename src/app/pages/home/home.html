@@ -39,7 +39,23 @@
                   <h3 class="api-card-name">{{ api.name }}</h3>
                   <p class="api-card-description">{{ api.description }}</p>
                 </div>
-                <span class="api-card-badge api-card-badge--available">Available</span>
+                <div class="api-card-footer">
+                  <span class="api-card-badge api-card-badge--available">Available</span>
+                  @if (api.constraints) {
+                    <div class="api-card-constraints" aria-label="Requirements">
+                      @for (c of api.constraints; track c) {
+                        <span
+                          class="api-card-constraint"
+                          [class]="'api-card-constraint--' + c"
+                          [title]="constraintMeta(c).title"
+                        >
+                          <span aria-hidden="true">{{ constraintMeta(c).icon }}</span>
+                          {{ constraintMeta(c).label }}
+                        </span>
+                      }
+                    </div>
+                  }
+                </div>
               </a>
             } @else {
               <div class="api-card api-card--unavailable" [attr.aria-label]="api.name + ': ' + api.description + ' (coming soon)'">
@@ -48,7 +64,9 @@
                   <h3 class="api-card-name">{{ api.name }}</h3>
                   <p class="api-card-description">{{ api.description }}</p>
                 </div>
-                <span class="api-card-badge api-card-badge--soon">Coming soon</span>
+                <div class="api-card-footer">
+                  <span class="api-card-badge api-card-badge--soon">Coming soon</span>
+                </div>
               </div>
             }
           </li>

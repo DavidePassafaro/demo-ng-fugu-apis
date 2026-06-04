@@ -1,3 +1,5 @@
+export type FuguApiConstraint = 'mobile-only' | 'pwa-only' | 'device-required';
+
 export interface FuguApi {
   id: string;
   name: string;
@@ -5,6 +7,7 @@ export interface FuguApi {
   path: string;
   icon: string;
   available: boolean;
+  constraints?: FuguApiConstraint[];
 }
 
 export const FUGU_APIS: FuguApi[] = [
@@ -39,6 +42,7 @@ export const FUGU_APIS: FuguApi[] = [
     path: '/apis/file-handling',
     icon: '🗂️',
     available: true,
+    constraints: ['pwa-only'],
   },
   {
     id: 'web-hid',
@@ -47,6 +51,7 @@ export const FUGU_APIS: FuguApi[] = [
     path: '/apis/web-hid',
     icon: '🖊️',
     available: true,
+    constraints: ['device-required'],
   },
   {
     id: 'gamepad',
@@ -55,6 +60,7 @@ export const FUGU_APIS: FuguApi[] = [
     path: '/apis/gamepad',
     icon: '🎮',
     available: true,
+    constraints: ['device-required'],
   },
   {
     id: 'badging',
@@ -63,6 +69,7 @@ export const FUGU_APIS: FuguApi[] = [
     path: '/apis/badging',
     icon: '🔔',
     available: true,
+    constraints: ['pwa-only'],
   },
   {
     id: 'contact-picker',
@@ -71,6 +78,7 @@ export const FUGU_APIS: FuguApi[] = [
     path: '/apis/contact-picker',
     icon: '👤',
     available: true,
+    constraints: ['mobile-only'],
   },
   {
     id: 'screen-wake-lock',

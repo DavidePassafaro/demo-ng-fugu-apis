@@ -163,12 +163,20 @@
   line-height: 1.6;
 }
 
+.api-card-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: auto;
+}
+
 .api-card-badge {
-  align-self: flex-start;
   font-size: 0.75rem;
   font-weight: 600;
   padding: 0.2rem 0.6rem;
   border-radius: 999px;
+  white-space: nowrap;
 
   &--available {
     background: var(--color-success-subtle);
@@ -178,5 +186,41 @@
   &--soon {
     background: var(--color-muted-subtle);
     color: var(--color-text-secondary);
+  }
+}
+
+.api-card-constraints {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.api-card-constraint {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.175rem 0.5rem;
+  border-radius: 999px;
+  white-space: nowrap;
+  border: 1px solid transparent;
+
+  &--mobile-only {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border-color: #bfdbfe;
+  }
+
+  &--pwa-only {
+    background: #faf5ff;
+    color: #7c3aed;
+    border-color: #ddd6fe;
+  }
+
+  &--device-required {
+    background: #fff7ed;
+    color: #c2410c;
+    border-color: #fed7aa;
   }
 }
