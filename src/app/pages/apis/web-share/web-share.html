@@ -1,0 +1,56 @@
+<article class="web-share-page">
+  <header class="page-header">
+    <span class="page-icon" aria-hidden="true">🔗</span>
+    <div>
+      <h1 class="page-title">Web Share API</h1>
+      <p class="page-subtitle">
+        Invoke the native OS share sheet to share text, URLs and files via
+        <code>navigator.share()</code>.
+      </p>
+    </div>
+  </header>
+
+  @if (!isSupported) {
+    <div class="availability-banner availability-banner--error" role="alert">
+      <span aria-hidden="true">⚠️</span>
+      <span>
+        <strong>API not available.</strong>
+        This browser does not support <code>navigator.share</code>.
+        Try Chrome or Edge on Android, or Safari on iOS/macOS.
+      </span>
+    </div>
+  } @else {
+    <div class="availability-banner availability-banner--ok" role="status">
+      <span aria-hidden="true">✓</span>
+      <span>
+        <strong>API available.</strong>
+        @if (supportsFileShare) {
+          <code>navigator.canShare</code> supported — text, URLs and files can be shared.
+        } @else {
+          <code>navigator.canShare</code> not available — only text and URLs can be shared.
+        }
+      </span>
+    </div>
+
+    <div class="web-share-panels">
+      <section class="web-share-section" aria-labelledby="data-section-title">
+        <h2 id="data-section-title" class="section-title">
+          Share text &amp; URL
+          <code>navigator.share(data)</code>
+        </h2>
+        <app-web-share-data-panel (share)="shareData($event)" />
+      </section>
+
+      <section class="web-share-section" aria-labelledby="files-section-title">
+        <h2 id="files-section-title" class="section-title">
+          Share files
+          <code>navigator.canShare(data) · navigator.share(data)</code>
+        </h2>
+        <app-web-share-files-panel
+          [supportsFileShare]="supportsFileShare"
+          (share)="shareFiles($event)"
+        />
+      </section>
+    </div>
+  }
+</article>

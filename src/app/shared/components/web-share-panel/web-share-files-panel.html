@@ -1,0 +1,71 @@
+<div class="panel">
+  @if (!supportsFileShare()) {
+    <p class="panel-feedback panel-feedback--error" role="status">
+      <code>navigator.canShare</code> is not available in this browser — file sharing is not supported.
+    </p>
+  } @else {
+    <label class="file-drop" for="share-files-input">
+      @if (entries().length === 0) {
+        <span class="file-drop-placeholder" aria-hidden="true">📎</span>
+        <span class="file-drop-text">Click to select files to share</span>
+      } @else {
+        <span class="file-drop-text">Click to change selection</span>
+      }
+    </label>
+
+    <input
+      id="share-files-input"
+      type="file"
+      multiple
+      class="visually-hidden"
+      (change)="onFilesSelected($event)"
+      aria-label="Select files to share"
+    />
+
+    @if (entries().length > 0) {
+      <ul class="file-list" role="list" aria-label="Selected files">
+        @for (entry of entries(); track entry.file.name; let i = $index) {
+          <li class="file-list-item">
+            <span class="file-list-icon" aria-hidden="true">📄</span>
+            <span class="file-list-name">{{ entry.file.name }}</span>
+            <span class="file-list-meta">{{ entry.file.type || 'unknown' }} · {{ entry.sizeLabel }}</span>
+            <button
+              class="file-list-remove"
+              type="button"
+              (click)="removeFile(i)"
+              [attr.aria-label]="'Remove ' + entry.file.name"
+            >
+              ×
+            </button>
+          </li>
+        }
+      </ul>
+    }
+
+    <button
+      class="panel-button"
+      type="button"
+      [disabled]="!canSubmit()"
+      (click)="onShare()"
+    >
+      🔗 Share files
+    </button>
+
+    <p class="panel-hint">
+      The browser calls <code>navigator.canShare(&#123; files &#125;)</code> before opening the share sheet.
+      Not all file types are shareable on every platform.
+    </p>
+
+    @if (feedback()) {
+      <p
+        class="panel-feedback"
+        [class.panel-feedback--success]="feedbackType() === 'success'"
+        [class.panel-feedback--error]="feedbackType() === 'error'"
+        [attr.role]="feedbackType() === 'error' ? 'alert' : 'status'"
+        aria-live="polite"
+      >
+        {{ feedback() }}
+      </p>
+    }
+  }
+</div>

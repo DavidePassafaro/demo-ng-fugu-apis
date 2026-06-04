@@ -17,19 +17,19 @@ export const FUGU_APIS: FuguApi[] = [
     available: true,
   },
   {
-    id: 'file-system',
-    name: 'File System Access API',
-    description: 'Open, read, modify and save files and directories directly from the local filesystem.',
-    path: '/apis/file-system',
-    icon: '📁',
-    available: false,
-  },
-  {
     id: 'web-share',
     name: 'Web Share API',
     description: 'Share text, URLs and files using the native OS share sheet.',
     path: '/apis/web-share',
     icon: '🔗',
+    available: true,
+  },
+  {
+    id: 'file-system',
+    name: 'File System Access API',
+    description: 'Open, read, modify and save files and directories directly from the local filesystem.',
+    path: '/apis/file-system',
+    icon: '📁',
     available: false,
   },
   {

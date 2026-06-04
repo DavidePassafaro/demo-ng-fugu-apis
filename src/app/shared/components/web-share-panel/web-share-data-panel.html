@@ -1,0 +1,71 @@
+<div class="panel">
+  <div class="share-fields">
+    <div class="field-group">
+      <label class="panel-label" for="share-title">Title</label>
+      <input
+        id="share-title"
+        type="text"
+        class="panel-input"
+        [ngModel]="title()"
+        (ngModelChange)="title.set($event)"
+        placeholder="e.g. Check out this page"
+      />
+    </div>
+
+    <div class="field-group">
+      <label class="panel-label" for="share-text">Text</label>
+      <textarea
+        id="share-text"
+        class="panel-textarea"
+        [ngModel]="text()"
+        (ngModelChange)="text.set($event)"
+        placeholder="e.g. I found this really interesting article…"
+        rows="3"
+      ></textarea>
+    </div>
+
+    <div class="field-group">
+      <label class="panel-label" for="share-url">URL</label>
+      <input
+        id="share-url"
+        type="url"
+        class="panel-input"
+        [ngModel]="url()"
+        (ngModelChange)="url.set($event)"
+        placeholder="https://example.com"
+      />
+    </div>
+  </div>
+
+  @if (canSubmit()) {
+    <div class="share-preview" aria-label="Share payload preview">
+      <span class="preview-label">Payload</span>
+      <pre class="preview-code">{{ preview() | json }}</pre>
+    </div>
+  }
+
+  <button
+    class="panel-button"
+    type="button"
+    [disabled]="!canSubmit()"
+    (click)="onShare()"
+  >
+    🔗 Share
+  </button>
+
+  <p class="panel-hint">
+    Fill in at least one field. The native OS share sheet will open on trigger.
+  </p>
+
+  @if (feedback()) {
+    <p
+      class="panel-feedback"
+      [class.panel-feedback--success]="feedbackType() === 'success'"
+      [class.panel-feedback--error]="feedbackType() === 'error'"
+      [attr.role]="feedbackType() === 'error' ? 'alert' : 'status'"
+      aria-live="polite"
+    >
+      {{ feedback() }}
+    </p>
+  }
+</div>
