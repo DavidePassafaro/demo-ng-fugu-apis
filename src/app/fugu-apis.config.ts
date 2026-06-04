@@ -80,4 +80,12 @@ export const FUGU_APIS: FuguApi[] = [
     icon: '💡',
     available: true,
   },
+  {
+    id: 'picture-in-picture',
+    name: 'Picture-in-Picture API',
+    description: 'Float a video or arbitrary HTML in a persistent overlay window.',
+    path: '/apis/picture-in-picture',
+    icon: '📺',
+    available: true,
+  },
 ];

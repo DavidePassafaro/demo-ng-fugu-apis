@@ -1,0 +1,193 @@
+<article class="pip-page">
+  <header class="page-header">
+    <span class="page-icon" aria-hidden="true">📺</span>
+    <div>
+      <h1 class="page-title">Picture-in-Picture API</h1>
+      <p class="page-subtitle">
+        Float a video with <code>video.requestPictureInPicture()</code>, or open an arbitrary HTML
+        window with <code>documentPictureInPicture.requestWindow()</code>.
+      </p>
+    </div>
+  </header>
+
+  <!-- Availability banners -->
+  <div class="pip-banners">
+    @if (!isVideoSupported) {
+      <div class="availability-banner availability-banner--error" role="alert">
+        <span aria-hidden="true">⚠️</span>
+        <span><strong>Video PiP not available.</strong> Use Chrome, Edge or Safari 13.1+.</span>
+      </div>
+    } @else {
+      <div class="availability-banner availability-banner--ok" role="status">
+        <span aria-hidden="true">✓</span>
+        <span><strong>Video PiP available.</strong> <code>document.pictureInPictureEnabled</code></span>
+      </div>
+    }
+
+    @if (!isDocPipSupported) {
+      <div class="availability-banner availability-banner--warn" role="alert">
+        <span aria-hidden="true">ℹ️</span>
+        <span>
+          <strong>Document PiP not available.</strong>
+          <code>documentPictureInPicture</code> requires Chrome 116+ on desktop.
+        </span>
+      </div>
+    } @else {
+      <div class="availability-banner availability-banner--ok" role="status">
+        <span aria-hidden="true">✓</span>
+        <span><strong>Document PiP available.</strong> <code>window.documentPictureInPicture</code></span>
+      </div>
+    }
+  </div>
+
+  <div class="pip-layout">
+
+    <!-- ── Video PiP ───────────────────────────────────────────────── -->
+    <section class="pip-section" aria-labelledby="video-pip-title">
+      <h2 id="video-pip-title" class="section-title">
+        Video PiP
+        <code>HTMLVideoElement.requestPictureInPicture()</code>
+      </h2>
+
+      <!-- Video player -->
+      <div class="video-wrapper">
+        <video
+          #video
+          class="pip-video"
+          [src]="videoSrc()"
+          controls
+          preload="metadata"
+          aria-label="Sample video for Picture-in-Picture demo"
+        ></video>
+
+        @if (isInVideoPip()) {
+          <div class="pip-overlay" aria-live="polite">
+            <span aria-hidden="true">📺</span>
+            <p>Playing in Picture-in-Picture</p>
+          </div>
+        }
+      </div>
+
+      <!-- Load custom video -->
+      <label class="load-video-btn" aria-label="Load your own video file">
+        📁 Load video file
+        <input
+          type="file"
+          accept="video/*"
+          class="file-input-hidden"
+          (change)="loadVideoFile($event)"
+          aria-hidden="true"
+          tabindex="-1"
+        />
+      </label>
+
+      <!-- Controls -->
+      <div class="pip-actions">
+        <button
+          type="button"
+          class="pip-btn pip-btn--primary"
+          (click)="enterVideoPip()"
+          [disabled]="!isVideoSupported || isInVideoPip()"
+        >
+          <span aria-hidden="true">⤡</span>
+          Enter PiP
+        </button>
+        <button
+          type="button"
+          class="pip-btn pip-btn--ghost"
+          (click)="exitVideoPip()"
+          [disabled]="!isVideoSupported || !isInVideoPip()"
+        >
+          <span aria-hidden="true">⤢</span>
+          Exit PiP
+        </button>
+      </div>
+
+      <!-- Status -->
+      <div class="pip-status" role="status" aria-live="polite">
+        @if (isInVideoPip()) {
+          <span class="pip-status-badge pip-status-badge--active">● In Picture-in-Picture</span>
+        } @else {
+          <span class="pip-status-badge">○ Not in PiP</span>
+        }
+      </div>
+
+      @if (videoError()) {
+        <p class="pip-error" role="alert">{{ videoError() }}</p>
+      }
+    </section>
+
+    <!-- ── Document PiP ─────────────────────────────────────────────── -->
+    <section class="pip-section" aria-labelledby="doc-pip-title">
+      <h2 id="doc-pip-title" class="section-title">
+        Document PiP
+        <code>documentPictureInPicture.requestWindow()</code>
+      </h2>
+
+      <p class="pip-description">
+        Unlike video PiP, the Document Picture-in-Picture API opens a real floating
+        browser window where you can render <em>any</em> HTML — custom controls,
+        dashboards, clocks, anything.
+      </p>
+
+      <!-- Preview of what will open -->
+      <div class="doc-pip-preview" aria-label="Preview of the Document PiP content">
+        <div class="doc-pip-mockup">
+          <div class="doc-pip-mockup-bar" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </div>
+          <div class="doc-pip-mockup-body" aria-hidden="true">
+            <p class="doc-pip-mockup-label">Document Picture-in-Picture</p>
+            <p class="doc-pip-mockup-clock">12:34:56</p>
+            <p class="doc-pip-mockup-hint">Arbitrary HTML — not just video!</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="pip-actions">
+        <button
+          type="button"
+          class="pip-btn pip-btn--primary"
+          (click)="openDocumentPip()"
+          [disabled]="!isDocPipSupported || isDocPipOpen()"
+        >
+          <span aria-hidden="true">⧉</span>
+          Open Document PiP
+        </button>
+        <button
+          type="button"
+          class="pip-btn pip-btn--ghost"
+          (click)="closeDocumentPip()"
+          [disabled]="!isDocPipOpen()"
+        >
+          <span aria-hidden="true">✕</span>
+          Close
+        </button>
+      </div>
+
+      <!-- Status -->
+      <div class="pip-status" role="status" aria-live="polite">
+        @if (isDocPipOpen()) {
+          <span class="pip-status-badge pip-status-badge--active">● Document PiP window open</span>
+        } @else {
+          <span class="pip-status-badge">○ No Document PiP window</span>
+        }
+      </div>
+
+      @if (docPipError()) {
+        <p class="pip-error" role="alert">{{ docPipError() }}</p>
+      }
+
+      <!-- Code snippet -->
+      <div class="pip-code-block" aria-label="Document PiP code example">
+        <pre class="pip-code">const pipWin = await documentPictureInPicture
+  .requestWindow(&#123; width: 340, height: 200 &#125;);
+
+// Move any element into the floating window
+pipWin.document.body.append(myElement);</pre>
+      </div>
+    </section>
+
+  </div>
+</article>

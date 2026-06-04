@@ -56,6 +56,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/apis/screen-wake-lock/screen-wake-lock').then((m) => m.ScreenWakeLock),
       },
       {
+        path: 'picture-in-picture',
+        loadComponent: () => import('./pages/apis/picture-in-picture/picture-in-picture').then((m) => m.PictureInPicture),
+      },
+      {
         path: '**',
         redirectTo: 'clipboard',
       },
