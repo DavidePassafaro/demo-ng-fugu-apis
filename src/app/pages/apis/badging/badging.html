@@ -1,0 +1,163 @@
+<article class="badging-page">
+  <header class="page-header">
+    <span class="page-icon" aria-hidden="true">🔔</span>
+    <div>
+      <h1 class="page-title">Badging API</h1>
+      <p class="page-subtitle">
+        Display a numeric badge or dot on the installed PWA icon using
+        <code>navigator.setAppBadge()</code> and <code>navigator.clearAppBadge()</code>.
+      </p>
+    </div>
+  </header>
+
+  @if (!isSupported) {
+    <div class="availability-banner availability-banner--error" role="alert">
+      <span aria-hidden="true">⚠️</span>
+      <span>
+        <strong>API not available.</strong>
+        <code>navigator.setAppBadge</code> is not supported in this browser.
+        Use Chrome or Edge 81+.
+      </span>
+    </div>
+  } @else {
+    <div class="availability-banner availability-banner--ok" role="status">
+      <span aria-hidden="true">✓</span>
+      <span>
+        <strong>API available.</strong>
+        Badge updates are visible on the installed PWA icon — install the app to see the effect.
+      </span>
+    </div>
+  }
+
+  <div class="badging-layout">
+
+    <!-- Controls -->
+    <section class="badging-section" aria-labelledby="controls-title">
+      <h2 id="controls-title" class="section-title">Controls</h2>
+
+      <div class="controls-card">
+
+        <!-- Numeric badge -->
+        <div class="control-group">
+          <label class="control-label" for="badge-count">Badge count</label>
+          <div class="control-row">
+            <input
+              id="badge-count"
+              type="number"
+              min="0"
+              max="9999"
+              [(ngModel)]="count"
+              class="count-input"
+              [disabled]="!isSupported"
+              aria-label="Badge count"
+            />
+            <button
+              type="button"
+              class="action-btn action-btn--primary"
+              (click)="setBadge()"
+              [disabled]="!isSupported"
+            >
+              <span aria-hidden="true">🔢</span>
+              Set numeric badge
+            </button>
+          </div>
+          <p class="control-hint"><code>navigator.setAppBadge({{ count }})</code></p>
+        </div>
+
+        <div class="controls-divider" aria-hidden="true"></div>
+
+        <!-- Dot badge -->
+        <div class="control-group">
+          <p class="control-label">Dot badge <span class="control-label-sub">(no number)</span></p>
+          <button
+            type="button"
+            class="action-btn action-btn--secondary"
+            (click)="setDot()"
+            [disabled]="!isSupported"
+          >
+            <span aria-hidden="true">⬤</span>
+            Set dot badge
+          </button>
+          <p class="control-hint"><code>navigator.setAppBadge()</code></p>
+        </div>
+
+        <div class="controls-divider" aria-hidden="true"></div>
+
+        <!-- Clear -->
+        <div class="control-group">
+          <p class="control-label">Clear badge</p>
+          <button
+            type="button"
+            class="action-btn action-btn--ghost"
+            (click)="clearBadge()"
+            [disabled]="!isSupported || currentBadge() === null"
+          >
+            <span aria-hidden="true">✕</span>
+            Clear badge
+          </button>
+          <p class="control-hint"><code>navigator.clearAppBadge()</code></p>
+        </div>
+
+      </div>
+
+      @if (error()) {
+        <p class="feedback feedback--error" role="alert">{{ error() }}</p>
+      }
+    </section>
+
+    <!-- Live preview -->
+    <section class="badging-section" aria-labelledby="preview-title">
+      <h2 id="preview-title" class="section-title">Live preview</h2>
+
+      <div class="preview-card">
+        <div class="app-icon-wrapper" aria-label="App icon preview" role="img">
+          <div class="app-icon" aria-hidden="true">
+            <span>🐡</span>
+          </div>
+          @if (currentBadge() !== null) {
+            <div
+              class="badge"
+              [class.badge--dot]="currentBadge() === 'dot'"
+              role="status"
+              [attr.aria-label]="currentBadge() === 'dot' ? 'Badge dot' : 'Badge: ' + currentBadge()"
+            >
+              @if (currentBadge() !== 'dot') {
+                <span>{{ currentBadge() }}</span>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="preview-status">
+          @switch (status()) {
+            @case ('idle') {
+              <p class="preview-label preview-label--muted">No badge set yet.</p>
+            }
+            @case ('set') {
+              <p class="preview-label preview-label--ok">
+                Numeric badge set to <strong>{{ currentBadge() }}</strong>.
+              </p>
+            }
+            @case ('dot') {
+              <p class="preview-label preview-label--ok">
+                Dot badge active — no count.
+              </p>
+            }
+            @case ('cleared') {
+              <p class="preview-label preview-label--muted">
+                Badge cleared.
+              </p>
+            }
+            @case ('error') {
+              <p class="preview-label preview-label--error">Error — see feedback above.</p>
+            }
+          }
+          <p class="preview-hint">
+            The actual badge on the OS icon updates in real time when the PWA is installed.
+          </p>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</article>

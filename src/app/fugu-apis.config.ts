@@ -62,7 +62,7 @@ export const FUGU_APIS: FuguApi[] = [
     description: 'Display a numeric badge on the installed PWA icon to notify the user.',
     path: '/apis/badging',
     icon: '🔔',
-    available: false,
+    available: true,
   },
   {
     id: 'contact-picker',

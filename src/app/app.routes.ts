@@ -44,6 +44,10 @@ export const routes: Routes = [
         ],
       },
       {
+        path: 'badging',
+        loadComponent: () => import('./pages/apis/badging/badging').then((m) => m.Badging),
+      },
+      {
         path: '**',
         redirectTo: 'clipboard',
       },
