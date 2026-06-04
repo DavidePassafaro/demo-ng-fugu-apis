@@ -1,12 +1,16 @@
 {
   "name": "Project Fugu APIs",
   "short_name": "Fugu APIs",
-  "description": "A showcase of modern browser capabilities from Project Fugu.",
+  "description": "Explore the cutting-edge browser APIs from Project Fugu — the initiative by Google, Microsoft and Intel to close the gap between native apps and the web. Interact with gamepads, drawing tablets, contacts, the clipboard, the file system and more, all directly from your browser.",
+  "lang": "en",
+  "dir": "ltr",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "scope": "./",
   "start_url": "./",
   "background_color": "#f8f9fa",
   "theme_color": "#4f46e5",
+  "categories": ["developer", "education", "utilities"],
   "icons": [
     {
       "src": "icons/icon-72x72.png",
@@ -55,6 +59,57 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshots/screen-home-narrow.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Home — browse all available Project Fugu APIs"
+    },
+    {
+      "src": "screenshots/screen-gamepad-narrow.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Gamepad API — real-time controller input and haptic feedback"
+    },
+    {
+      "src": "screenshots/screen-contact-picker-narrow.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Contact Picker API — pick contacts from your address book"
+    },
+    {
+      "src": "screenshots/screen-wake-lock-narrow.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Screen Wake Lock API — keep your screen awake"
+    },
+    {
+      "src": "screenshots/screen-home-wide.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Home — browse all available Project Fugu APIs"
+    },
+    {
+      "src": "screenshots/screen-webhid-wide.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "WebHID API — draw on a Huion tablet directly from the browser"
+    },
+    {
+      "src": "screenshots/screen-pip-wide.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Picture-in-Picture API — float video or arbitrary HTML in an overlay window"
     }
   ],
   "file_handlers": [
