@@ -30,6 +30,20 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/apis/gamepad/gamepad').then((m) => m.GamepadPage),
       },
       {
+        path: 'web-hid',
+        loadComponent: () => import('./pages/apis/web-hid/web-hid').then((m) => m.WebHid),
+        children: [
+          {
+            path: '',
+            loadComponent: () => import('./pages/apis/web-hid/connect/web-hid-connect').then((m) => m.WebHidConnect),
+          },
+          {
+            path: 'tablet',
+            loadComponent: () => import('./pages/apis/web-hid/tablet/web-hid-tablet').then((m) => m.WebHidTablet),
+          },
+        ],
+      },
+      {
         path: '**',
         redirectTo: 'clipboard',
       },

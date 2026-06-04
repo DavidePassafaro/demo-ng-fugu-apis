@@ -1,0 +1,236 @@
+@if (!hidService.isTabletConnected()) {
+
+  <div class="tablet-unsupported" role="alert">
+    <span aria-hidden="true">🚫</span>
+    <h2>No Huion tablet connected</h2>
+    <p>Connect your Huion tablet (vendorId&nbsp;9580) from the connection page first.</p>
+    <a routerLink="/apis/web-hid" class="back-btn">← Go back and connect</a>
+  </div>
+
+} @else {
+
+  <div class="tablet-workspace">
+
+    <!-- Toolbar -->
+    <div class="toolbar" role="toolbar" aria-label="Drawing tools">
+
+      <a routerLink="/apis/web-hid" class="toolbar-back" aria-label="Back to connect page">←</a>
+
+      <div class="toolbar-divider" aria-hidden="true"></div>
+
+      <span class="toolbar-device" aria-label="Connected device">🎨 {{ deviceName() }}</span>
+
+      <div class="toolbar-divider" aria-hidden="true"></div>
+
+      <!-- Tool -->
+      <div class="toolbar-group" role="group" aria-label="Tool">
+        <button
+          type="button"
+          class="tool-btn"
+          [class.tool-btn--active]="tool() === 'brush'"
+          (click)="tool.set('brush')"
+          [attr.aria-pressed]="tool() === 'brush'"
+          aria-label="Brush"
+        >✏️</button>
+        <button
+          type="button"
+          class="tool-btn"
+          [class.tool-btn--active]="tool() === 'eraser'"
+          (click)="tool.set('eraser')"
+          [attr.aria-pressed]="tool() === 'eraser'"
+          aria-label="Eraser"
+        >🧹</button>
+      </div>
+
+      <div class="toolbar-divider" aria-hidden="true"></div>
+
+      <!-- Color -->
+      <label class="toolbar-label" aria-label="Brush color">
+        <span>Color</span>
+        <input
+          type="color"
+          [value]="color()"
+          (input)="color.set($any($event.target).value)"
+          class="color-input"
+        />
+      </label>
+
+      <!-- Opacity -->
+      <label class="toolbar-label">
+        <span>Opacity</span>
+        <input
+          type="range" min="0.05" max="1" step="0.05"
+          [value]="opacity()"
+          (input)="opacity.set(+$any($event.target).value)"
+          class="range-input"
+          [attr.aria-valuenow]="opacity()"
+          aria-label="Opacity"
+        />
+        <span class="range-value">{{ (opacity() * 100).toFixed(0) }}%</span>
+      </label>
+
+      <!-- Brush size -->
+      <label class="toolbar-label">
+        <span>Size</span>
+        <input
+          type="range" min="1" max="60" step="1"
+          [value]="brushSize()"
+          (input)="brushSize.set(+$any($event.target).value)"
+          class="range-input"
+          [attr.aria-valuenow]="brushSize()"
+          aria-label="Brush size"
+        />
+        <span class="range-value">{{ brushSize() }}px</span>
+      </label>
+
+      <div class="toolbar-spacer" aria-hidden="true"></div>
+
+      <!-- Actions -->
+      <div class="toolbar-group" role="group" aria-label="Actions">
+        <label class="toolbar-action-btn" aria-label="Import image">
+          📁 Import
+          <input
+            type="file"
+            accept="image/*"
+            class="file-input-hidden"
+            (change)="importImage($event)"
+            aria-hidden="true"
+            tabindex="-1"
+          />
+        </label>
+        <button type="button" class="toolbar-action-btn" (click)="saveImage()">💾 Save</button>
+        <button type="button" class="toolbar-action-btn toolbar-action-btn--danger" (click)="clearCanvas()">🗑️ Clear</button>
+        <button type="button" class="toolbar-action-btn toolbar-action-btn--muted" (click)="resetCalibration()" title="Reset auto-calibrated axis ranges to default (2047)">⟳ Recalibrate</button>
+      </div>
+
+    </div>
+
+    <!-- Main area: canvas + events panel side by side -->
+    <div class="workspace-body">
+
+      <!-- Canvas — no pointer events, driven purely by HID inputreport -->
+      <div class="canvas-wrapper">
+        <canvas
+          #canvas
+          class="drawing-canvas"
+          width="1600"
+          height="900"
+          role="img"
+          aria-label="Drawing canvas — driven by Huion HID input reports"
+        ></canvas>
+
+        <!-- Hover cursor: shown when pen is in proximity but tip is not touching -->
+        @if (penCursor().visible) {
+          <div
+            class="pen-cursor"
+            aria-hidden="true"
+            [style.left]="penCursor().x + '%'"
+            [style.top]="penCursor().y + '%'"
+            [style.width.px]="brushSize() * 2"
+            [style.height.px]="brushSize() * 2"
+            [style.margin-left.px]="-(brushSize())"
+            [style.margin-top.px]="-(brushSize())"
+          ></div>
+        }
+      </div>
+
+      <!-- HID events panel -->
+      <aside class="hid-panel" aria-label="Raw HID input report data">
+        <h3 class="hid-panel-title">Raw HID <code>inputreport</code></h3>
+
+        <p class="hid-panel-hint">
+          Drawing is driven exclusively by <code>inputreport</code> events —
+          the pen works anywhere on the tablet surface, regardless of cursor position.
+        </p>
+
+        @if (!lastReport()) {
+          <div class="hid-empty">
+            <span aria-hidden="true">⏳</span>
+            <p>Waiting for input…<br>Touch the tablet surface with the pen.</p>
+          </div>
+        } @else {
+          <!-- Live decoded values -->
+          <div class="hid-live">
+            @if (lastReport()!.parsed; as p) {
+              <div class="hid-stat-grid">
+                <div class="hid-stat">
+                  <span class="hid-stat-label">Proximity</span>
+                  <span class="hid-stat-value" [class.hid-stat-value--on]="p.proximity">
+                    {{ p.proximity ? 'Yes' : 'No' }}
+                  </span>
+                </div>
+                <div class="hid-stat">
+                  <span class="hid-stat-label">Tip</span>
+                  <span class="hid-stat-value" [class.hid-stat-value--on]="p.tipDown">
+                    {{ p.tipDown ? 'Down' : 'Up' }}
+                  </span>
+                </div>
+                <div class="hid-stat">
+                  <span class="hid-stat-label">Btn 1</span>
+                  <span class="hid-stat-value" [class.hid-stat-value--on]="p.button1">
+                    {{ p.button1 ? 'On' : 'Off' }}
+                  </span>
+                </div>
+                <div class="hid-stat">
+                  <span class="hid-stat-label">Btn 2</span>
+                  <span class="hid-stat-value" [class.hid-stat-value--on]="p.button2">
+                    {{ p.button2 ? 'On' : 'Off' }}
+                  </span>
+                </div>
+              </div>
+              <p class="hid-flags-hint">flags byte: <code>0x{{ p.flags.toString(16).padStart(2, '0') }}</code></p>
+
+              <!-- X axis bar -->
+              <div class="hid-axis-row" aria-label="X axis">
+                <span class="hid-axis-label">X</span>
+                <div class="hid-axis-track" role="progressbar" [attr.aria-valuenow]="p.x" [attr.aria-valuemax]="maxX()">
+                  <div class="hid-axis-fill" [style.width]="(p.x / maxX() * 100) + '%'"></div>
+                </div>
+                <code class="hid-axis-val">{{ p.x }}&nbsp;/&nbsp;{{ maxX() }}</code>
+              </div>
+
+              <!-- Y axis bar -->
+              <div class="hid-axis-row" aria-label="Y axis">
+                <span class="hid-axis-label">Y</span>
+                <div class="hid-axis-track" role="progressbar" [attr.aria-valuenow]="p.y" [attr.aria-valuemax]="maxY()">
+                  <div class="hid-axis-fill" [style.width]="(p.y / maxY() * 100) + '%'"></div>
+                </div>
+                <code class="hid-axis-val">{{ p.y }}&nbsp;/&nbsp;{{ maxY() }}</code>
+              </div>
+
+              <!-- Pressure bar -->
+              <div class="hid-axis-row" aria-label="Pressure">
+                <span class="hid-axis-label">P</span>
+                <div
+                  class="hid-axis-track hid-axis-track--pressure"
+                  role="progressbar"
+                  [attr.aria-valuenow]="p.pressure"
+                  [attr.aria-valuemax]="maxPressure()"
+                >
+                  <div class="hid-axis-fill hid-axis-fill--pressure" [style.width]="(p.pressure / maxPressure() * 100) + '%'"></div>
+                </div>
+                <code class="hid-axis-val">{{ p.pressure }}&nbsp;/&nbsp;{{ maxPressure() }}</code>
+              </div>
+            }
+          </div>
+
+          <!-- Raw bytes log -->
+          <div class="hid-log" aria-label="Recent HID reports">
+            <p class="hid-log-label">Report log (last 8)</p>
+            <div class="hid-log-list" aria-live="polite" aria-atomic="false">
+              @for (r of recentReports(); track r.timestamp) {
+                <div class="hid-log-row" [class.hid-log-row--active]="r.parsed?.tipDown">
+                  <code class="hid-log-id">0x{{ r.reportId.toString(16).padStart(2, '0') }}</code>
+                  <code class="hid-log-hex">{{ r.hex }}</code>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </aside>
+
+    </div>
+
+  </div>
+
+}

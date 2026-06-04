@@ -1,0 +1,77 @@
+.web-hid-page {
+  padding: 2.5rem;
+  max-width: 960px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.25rem;
+  margin-bottom: 1.75rem;
+}
+
+.page-icon {
+  font-size: 2.5rem;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.page-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  letter-spacing: -0.03em;
+  margin-bottom: 0.5rem;
+}
+
+.page-subtitle {
+  font-size: 0.95rem;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin: 0;
+
+  code {
+    font-family: 'Courier New', monospace;
+    background: var(--color-code-bg);
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+    font-size: 0.9em;
+    color: var(--color-accent);
+  }
+}
+
+.availability-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.875rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin-bottom: 2rem;
+  border: 1px solid transparent;
+
+  code {
+    font-family: 'Courier New', monospace;
+    font-size: 0.85em;
+    background: rgba(0, 0, 0, 0.06);
+    padding: 0.1em 0.3em;
+    border-radius: 3px;
+  }
+
+  &--ok {
+    background: var(--color-success-subtle);
+    color: var(--color-success);
+    border-color: rgba(5, 150, 105, 0.2);
+  }
+
+  &--error {
+    background: var(--color-error-subtle);
+    color: var(--color-error);
+    border-color: rgba(220, 38, 38, 0.2);
+  }
+}

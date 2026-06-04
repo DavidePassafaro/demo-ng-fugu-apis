@@ -41,6 +41,14 @@ export const FUGU_APIS: FuguApi[] = [
     available: true,
   },
   {
+    id: 'web-hid',
+    name: 'WebHID API',
+    description: 'Connect HID devices and communicate with them directly from the browser.',
+    path: '/apis/web-hid',
+    icon: '🖊️',
+    available: true,
+  },
+  {
     id: 'gamepad',
     name: 'Gamepad API',
     description: 'Read real-time controller input and trigger haptic feedback via the Gamepad API.',

@@ -1,0 +1,64 @@
+<div class="connect-page">
+
+  <!-- Connect buttons -->
+  <section class="connect-section" aria-labelledby="connect-title">
+    <h2 id="connect-title" class="section-title">Connect a device</h2>
+
+    <div class="connect-actions">
+      <button
+        type="button"
+        class="connect-btn connect-btn--secondary"
+        (click)="requestAny()"
+        [disabled]="!hidService.isSupported"
+      >
+        <span aria-hidden="true">🔌</span>
+        Any HID device
+        <span class="connect-btn-hint">Opens the full device picker</span>
+      </button>
+
+      <button
+        type="button"
+        class="connect-btn connect-btn--primary"
+        (click)="requestTablet()"
+        [disabled]="!hidService.isSupported"
+      >
+        <span aria-hidden="true">✏️</span>
+        Huion tablet
+        <span class="connect-btn-hint">vendorId: {{ huionVendorId }} (0x256C)</span>
+      </button>
+    </div>
+
+    @if (error) {
+      <p class="connect-error" role="alert">{{ error }}</p>
+    }
+  </section>
+
+  <!-- Connected devices list -->
+  @if (hidService.devices().length > 0) {
+    <section class="devices-section" aria-labelledby="devices-title">
+      <h2 id="devices-title" class="section-title">Granted devices</h2>
+      <ul class="device-list" role="list">
+        @for (device of hidService.devices(); track device.productId) {
+          <li class="device-item">
+            <div class="device-info">
+              <span class="device-name">{{ device.productName || 'Unknown device' }}</span>
+              <div class="device-meta">
+                <span class="device-badge">vendorId: {{ device.vendorId }}</span>
+                <span class="device-badge">productId: {{ device.productId }}</span>
+                @if (device.vendorId === huionVendorId) {
+                  <span class="device-badge device-badge--huion">Huion 🎨</span>
+                }
+              </div>
+            </div>
+            @if (device.vendorId === huionVendorId) {
+              <a routerLink="/apis/web-hid/tablet" class="device-open-btn" aria-label="Open tablet canvas">
+                Open canvas →
+              </a>
+            }
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+</div>

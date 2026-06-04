@@ -1,0 +1,33 @@
+<article class="web-hid-page">
+  <header class="page-header">
+    <span class="page-icon" aria-hidden="true">🖊️</span>
+    <div>
+      <h1 class="page-title">WebHID API</h1>
+      <p class="page-subtitle">
+        Connect HID devices and communicate with them using
+        <code>navigator.hid.requestDevice()</code>.
+      </p>
+    </div>
+  </header>
+
+  @if (!hidService.isSupported) {
+    <div class="availability-banner availability-banner--error" role="alert">
+      <span aria-hidden="true">⚠️</span>
+      <span>
+        <strong>API not available.</strong>
+        <code>navigator.hid</code> is not supported in this browser.
+        Use Chrome or Edge 89+.
+      </span>
+    </div>
+  } @else {
+    <div class="availability-banner availability-banner--ok" role="status">
+      <span aria-hidden="true">✓</span>
+      <span>
+        <strong>API available.</strong>
+        Request a device to get started.
+      </span>
+    </div>
+  }
+
+  <router-outlet />
+</article>
