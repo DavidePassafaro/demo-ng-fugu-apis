@@ -30,6 +30,10 @@ export class WebHidConnect {
     });
   }
 
+  /**
+   * Opens the browser's HID device picker with no filters, allowing the user to
+   * grant access to any HID device via `navigator.hid.requestDevice()`.
+   */
   async requestAny(): Promise<void> {
     this.error = '';
     try {
@@ -46,6 +50,10 @@ export class WebHidConnect {
     }
   }
 
+  /**
+   * Opens the HID device picker filtered to Huion tablets (vendorId 0x256C)
+   * and navigates to the tablet workspace on success.
+   */
   async requestTablet(): Promise<void> {
     this.error = '';
     try {

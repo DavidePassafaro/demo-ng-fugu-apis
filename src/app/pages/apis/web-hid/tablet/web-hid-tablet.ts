@@ -110,6 +110,10 @@ export class WebHidTablet implements OnDestroy {
 
   // ── Device management ─────────────────────────────────────────────────────
 
+  /**
+   * Opens all HID interfaces exposed by the Huion tablet and attaches
+   * an `inputreport` listener to each one via `device.open()`.
+   */
   private async openAllInterfaces(): Promise<void> {
     for (const [index, device] of this.hidService.huionDevices().entries()) {
       try {
@@ -127,6 +131,12 @@ export class WebHidTablet implements OnDestroy {
     }
   }
 
+  /**
+   * Handles each `inputreport` HID event: decodes the raw bytes to hex,
+   * parses the pen data, auto-calibrates axis ranges, and drives the canvas.
+   * @param event {HIDInputReportEvent}
+   * @param deviceIndex {number}
+   */
   private onInputReport(event: HIDInputReportEvent, deviceIndex: number): void {
     const data = event.data;
     const bytes: string[] = [];
@@ -151,6 +161,11 @@ export class WebHidTablet implements OnDestroy {
     this.handlePenInput(parsed);
   }
 
+  /**
+   * Translates parsed pen coordinates and pressure into canvas draw calls,
+   * toggling between hover cursor, active stroke, and out-of-range states.
+   * @param parsed {ParsedPenData}
+   */
   private handlePenInput(parsed: ParsedPenData): void {
     const canvas = this.canvasRef()?.nativeElement;
     if (!canvas || !this.ctx) return;
@@ -248,6 +263,9 @@ export class WebHidTablet implements OnDestroy {
 
   // ── Toolbar actions ───────────────────────────────────────────────────────
 
+  /**
+   * Fills the canvas with a white background, discarding all drawn strokes.
+   */
   clearCanvas(): void {
     this.fillBackground();
   }
@@ -264,12 +282,19 @@ export class WebHidTablet implements OnDestroy {
     }));
   }
 
+  /**
+   * Resets the auto-calibrated axis maximums back to the Huion default (2047).
+   */
   resetCalibration(): void {
     this.maxX.set(2047);
     this.maxY.set(2047);
     this.maxPressure.set(2047);
   }
 
+  /**
+   * Loads a local image file onto the canvas, scaling it to fit while preserving aspect ratio.
+   * @param event {Event}
+   */
   importImage(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
@@ -293,6 +318,9 @@ export class WebHidTablet implements OnDestroy {
     input.value = '';
   }
 
+  /**
+   * Exports the canvas as a PNG and triggers a browser download via a temporary anchor.
+   */
   saveImage(): void {
     const canvas = this.canvasRef()?.nativeElement;
     if (!canvas) return;

@@ -17,6 +17,9 @@ export class Badging {
   error = signal('');
   currentBadge = signal<number | 'dot' | null>(null);
 
+  /**
+   * Sets the app badge to the current numeric count via `navigator.setAppBadge(count)`.
+   */
   async setBadge(): Promise<void> {
     this.error.set('');
     try {
@@ -29,6 +32,9 @@ export class Badging {
     }
   }
 
+  /**
+   * Sets a dot badge (no count) via `navigator.setAppBadge()` with no arguments.
+   */
   async setDot(): Promise<void> {
     this.error.set('');
     try {
@@ -41,6 +47,9 @@ export class Badging {
     }
   }
 
+  /**
+   * Removes the badge entirely via `navigator.clearAppBadge()`.
+   */
   async clearBadge(): Promise<void> {
     this.error.set('');
     try {

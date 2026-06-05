@@ -41,6 +41,10 @@ export class ContactPicker implements OnInit {
   readonly error = signal('');
   readonly picked = signal(false);
 
+  /**
+   * Fetches the list of properties the browser supports via `navigator.contacts.getProperties()`
+   * and filters the initial selection to only include supported ones.
+   */
   async ngOnInit(): Promise<void> {
     if (!this.isSupported) return;
     try {
@@ -55,6 +59,10 @@ export class ContactPicker implements OnInit {
     }
   }
 
+  /**
+   * Adds or removes a contact property from the active selection.
+   * @param prop {ContactProperty}
+   */
   toggleProperty(prop: ContactProperty): void {
     this.selectedProperties.update((sel) => {
       const next = new Set(sel);
@@ -73,6 +81,10 @@ export class ContactPicker implements OnInit {
     return supported.length === 0 || supported.includes(prop);
   }
 
+  /**
+   * Opens the native contact picker via `navigator.contacts.select()` and displays
+   * the returned contacts, resolving avatar blobs to object URLs where available.
+   */
   async pickContacts(): Promise<void> {
     this.error.set('');
     const props = [...this.selectedProperties()];

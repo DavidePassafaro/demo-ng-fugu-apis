@@ -25,6 +25,10 @@ export class FileSystem {
   private readonly savePanel = viewChild.required(FsSavePanel);
   private readonly dirPanel = viewChild.required(FsDirPanel);
 
+  /**
+   * Opens a native file picker via `window.showOpenFilePicker()` and reads the
+   * selected file's text content (truncated to the first 4 000 characters).
+   */
   async openFile(): Promise<void> {
     try {
       const [handle] = await window.showOpenFilePicker();
@@ -47,6 +51,11 @@ export class FileSystem {
     }
   }
 
+  /**
+   * Opens a save dialog via `window.showSaveFilePicker()` and writes the given
+   * content to the chosen file using a `FileSystemWritableFileStream`.
+   * @param content {string}
+   */
   async saveFile(content: string): Promise<void> {
     try {
       const handle = await window.showSaveFilePicker({
@@ -65,6 +74,10 @@ export class FileSystem {
     }
   }
 
+  /**
+   * Opens a directory picker via `window.showDirectoryPicker()` and lists all
+   * immediate entries (files and sub-directories) of the selected folder.
+   */
   async openDirectory(): Promise<void> {
     try {
       const dirHandle = await window.showDirectoryPicker();

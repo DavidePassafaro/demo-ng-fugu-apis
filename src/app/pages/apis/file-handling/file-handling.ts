@@ -79,6 +79,10 @@ export class FileHandling implements OnDestroy {
     });
   }
 
+  /**
+   * Triggers the browser's PWA install prompt captured from the `beforeinstallprompt` event
+   * and reports the user's outcome (accepted / dismissed) to the install panel.
+   */
   async install(): Promise<void> {
     const prompt = this.installPrompt();
     if (!prompt) return;

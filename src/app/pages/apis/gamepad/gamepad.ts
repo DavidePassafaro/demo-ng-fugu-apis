@@ -90,6 +90,9 @@ export class GamepadPage implements OnDestroy {
     });
   }
 
+  /**
+   * Starts the `requestAnimationFrame` polling loop that reads gamepad state each frame.
+   */
   private startLoop(): void {
     if (this.rafId !== null) return;
     const tick = (): void => {
@@ -99,6 +102,9 @@ export class GamepadPage implements OnDestroy {
     this.rafId = requestAnimationFrame(tick);
   }
 
+  /**
+   * Cancels the animation frame loop when all gamepads disconnect.
+   */
   private stopLoop(): void {
     if (this.rafId !== null) {
       cancelAnimationFrame(this.rafId);
@@ -106,6 +112,10 @@ export class GamepadPage implements OnDestroy {
     }
   }
 
+  /**
+   * Reads the current state of all connected gamepads via `navigator.getGamepads()`
+   * and updates the signal with fresh snapshots.
+   */
   private poll(): void {
     const states: GamepadState[] = [];
     for (const gp of navigator.getGamepads()) {
@@ -116,6 +126,11 @@ export class GamepadPage implements OnDestroy {
     this.gamepads.set(states);
   }
 
+  /**
+   * Triggers a dual-rumble haptic effect on the specified gamepad
+   * via `vibrationActuator.playEffect('dual-rumble', ...)`.
+   * @param params {index, weakMagnitude, strongMagnitude, duration}
+   */
   async onVibrate(params: { index: number; weakMagnitude: number; strongMagnitude: number; duration: number }): Promise<void> {
     const gp = navigator.getGamepads()[params.index];
     if (!gp) return;

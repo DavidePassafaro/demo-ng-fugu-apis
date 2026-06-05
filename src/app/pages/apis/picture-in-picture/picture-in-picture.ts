@@ -39,6 +39,10 @@ export class PictureInPicture implements OnDestroy {
     });
   }
 
+  /**
+   * Loads a local video file selected by the user and sets it as the video source.
+   * @param event {Event}
+   */
   loadVideoFile(event: Event): void {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
@@ -46,6 +50,9 @@ export class PictureInPicture implements OnDestroy {
     this.videoSrc.set(url);
   }
 
+  /**
+   * Starts playback if paused and floats the video via `HTMLVideoElement.requestPictureInPicture()`.
+   */
   async enterVideoPip(): Promise<void> {
     this.videoError.set('');
     const video = this.videoRef()?.nativeElement;
@@ -58,6 +65,9 @@ export class PictureInPicture implements OnDestroy {
     }
   }
 
+  /**
+   * Returns the video to the page via `document.exitPictureInPicture()`.
+   */
   async exitVideoPip(): Promise<void> {
     this.videoError.set('');
     try {
@@ -73,6 +83,10 @@ export class PictureInPicture implements OnDestroy {
 
   private docPipWindow: Window | null = null;
 
+  /**
+   * Opens a floating browser window via `documentPictureInPicture.requestWindow()`
+   * and injects arbitrary HTML (a live clock) into it.
+   */
   async openDocumentPip(): Promise<void> {
     this.docPipError.set('');
     try {
@@ -115,6 +129,9 @@ export class PictureInPicture implements OnDestroy {
     }
   }
 
+  /**
+   * Closes the Document PiP window if one is currently open.
+   */
   closeDocumentPip(): void {
     this.docPipWindow?.close();
   }

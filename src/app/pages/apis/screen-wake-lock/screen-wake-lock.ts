@@ -26,6 +26,10 @@ export class ScreenWakeLock implements OnDestroy {
     document.addEventListener('visibilitychange', this.onVisibilityChange);
   }
 
+  /**
+   * Requests a screen wake lock via `navigator.wakeLock.request('screen')`,
+   * preventing the display from dimming or locking while the page is visible.
+   */
   async acquire(): Promise<void> {
     this.error.set('');
     this.releaseReason.set('');
@@ -48,6 +52,9 @@ export class ScreenWakeLock implements OnDestroy {
     }
   }
 
+  /**
+   * Releases the active `WakeLockSentinel`, allowing the screen to dim normally.
+   */
   async release(): Promise<void> {
     if (!this.sentinel) return;
     await this.sentinel.release();
