@@ -52,7 +52,7 @@
 /* Hero */
 .hero {
   background: linear-gradient(135deg, var(--color-accent-subtle) 0%, var(--color-surface) 60%);
-  padding: 5rem 2rem;
+  padding: 3rem 2rem;
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -69,6 +69,7 @@
   letter-spacing: -0.04em;
   line-height: 1.1;
   margin-bottom: 1.5rem;
+  text-wrap: balance;
 }
 
 .hero-description {
@@ -81,7 +82,7 @@
 
 /* APIs section */
 .apis-section {
-  padding: 4rem 2rem;
+  padding: 3rem 2rem;
 }
 
 .apis-section-inner {
