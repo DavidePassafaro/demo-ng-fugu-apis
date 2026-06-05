@@ -1,6 +1,10 @@
 .file-handling-page {
   padding: 2.5rem;
   max-width: 960px;
+
+  @media (max-width: 768px) {
+    padding: 1.25rem 1rem;
+  }
 }
 
 .page-header {
@@ -8,6 +12,10 @@
   align-items: flex-start;
   gap: 1.25rem;
   margin-bottom: 1.75rem;
+
+  > div {
+    min-width: 0;
+  }
 }
 
 .page-icon {
@@ -18,7 +26,7 @@
 }
 
 .page-title {
-  font-size: 1.75rem;
+  font-size: clamp(1.35rem, 5vw, 1.75rem);
   font-weight: 800;
   color: var(--color-text-primary);
   letter-spacing: -0.03em;
@@ -30,6 +38,7 @@
   color: var(--color-text-secondary);
   line-height: 1.6;
   margin: 0;
+  overflow-wrap: break-word;
 
   code {
     font-family: 'Courier New', monospace;
@@ -38,6 +47,7 @@
     border-radius: 4px;
     font-size: 0.9em;
     color: var(--color-accent);
+    word-break: break-word;
   }
 }
 
