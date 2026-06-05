@@ -28,6 +28,22 @@ export const FUGU_APIS: FuguApi[] = [
     available: true,
   },
   {
+    id: 'picture-in-picture',
+    name: 'Picture-in-Picture API',
+    description: 'Float a video or arbitrary HTML in a persistent overlay window.',
+    path: '/apis/picture-in-picture',
+    icon: '📺',
+    available: true,
+  },
+  {
+    id: 'screen-wake-lock',
+    name: 'Screen Wake Lock API',
+    description: 'Prevent the device from dimming or locking the screen while the application is in use.',
+    path: '/apis/screen-wake-lock',
+    icon: '💡',
+    available: true,
+  },
+  {
     id: 'file-system',
     name: 'File System Access API',
     description: 'Open, read, modify and save files and directories directly from the local filesystem.',
@@ -35,6 +51,7 @@ export const FUGU_APIS: FuguApi[] = [
     icon: '📁',
     available: true,
   },
+  // PWA-only APIs
   {
     id: 'file-handling',
     name: 'File Handling API',
@@ -44,6 +61,16 @@ export const FUGU_APIS: FuguApi[] = [
     available: true,
     constraints: ['pwa-only'],
   },
+  {
+    id: 'badging',
+    name: 'Badging API',
+    description: 'Display a numeric badge on the installed PWA icon to notify the user.',
+    path: '/apis/badging',
+    icon: '🔔',
+    available: true,
+    constraints: ['pwa-only'],
+  },
+  // Device-required only
   {
     id: 'web-hid',
     name: 'WebHID API',
@@ -62,15 +89,7 @@ export const FUGU_APIS: FuguApi[] = [
     available: true,
     constraints: ['device-required'],
   },
-  {
-    id: 'badging',
-    name: 'Badging API',
-    description: 'Display a numeric badge on the installed PWA icon to notify the user.',
-    path: '/apis/badging',
-    icon: '🔔',
-    available: true,
-    constraints: ['pwa-only'],
-  },
+  // Mobile only
   {
     id: 'contact-picker',
     name: 'Contact Picker API',
@@ -79,21 +98,5 @@ export const FUGU_APIS: FuguApi[] = [
     icon: '👤',
     available: true,
     constraints: ['mobile-only'],
-  },
-  {
-    id: 'screen-wake-lock',
-    name: 'Screen Wake Lock API',
-    description: 'Prevent the device from dimming or locking the screen while the application is in use.',
-    path: '/apis/screen-wake-lock',
-    icon: '💡',
-    available: true,
-  },
-  {
-    id: 'picture-in-picture',
-    name: 'Picture-in-Picture API',
-    description: 'Float a video or arbitrary HTML in a persistent overlay window.',
-    path: '/apis/picture-in-picture',
-    icon: '📺',
-    available: true,
   },
 ];
