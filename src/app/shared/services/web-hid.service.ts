@@ -28,8 +28,12 @@ export class WebHidService {
 
   constructor() {
     if (!this.isSupported) return;
+
+    // 👇🏻👇🏻👇🏻
     navigator.hid.addEventListener('connect', this.onHidConnect);
     navigator.hid.addEventListener('disconnect', this.onHidDisconnect);
+
+
     // Re-hydrate previously granted devices
     void this.refreshDevices();
   }
@@ -38,7 +42,11 @@ export class WebHidService {
    * Shows the browser's HID device picker with no vendor filter via `navigator.hid.requestDevice()`.
    */
   async requestAny(): Promise<void> {
+
+    // 👇🏻👇🏻👇🏻
     const granted = await navigator.hid.requestDevice({ filters: [] });
+
+
     this.mergeDevices(granted);
   }
 
@@ -46,7 +54,11 @@ export class WebHidService {
    * Shows the HID device picker pre-filtered to Huion tablets (vendorId 0x256C).
    */
   async requestTablet(): Promise<void> {
+
+    // 👇🏻👇🏻👇🏻
     const granted = await navigator.hid.requestDevice({ filters: [{ vendorId: HUION_VENDOR_ID }] });
+
+
     this.mergeDevices(granted);
   }
 

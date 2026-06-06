@@ -122,7 +122,11 @@ export class WebHidTablet implements OnDestroy {
         const listener = (event: HIDInputReportEvent): void => {
           this.onInputReport(event, index);
         };
+
+        // 👇🏻👇🏻👇🏻
         device.addEventListener('inputreport', listener);
+
+
         this.openedDevices.push(device);
         (device as HIDDevice & { _listener?: (e: HIDInputReportEvent) => void })._listener = listener;
       } catch (err) {

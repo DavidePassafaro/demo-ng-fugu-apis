@@ -62,6 +62,8 @@ export class FileHandling implements OnDestroy {
     afterNextRender(() => {
       if (!this.isSupported) return;
 
+
+      // 👇🏻👇🏻👇🏻
       window.launchQueue.setConsumer(async (launchParams) => {
         if (!launchParams.files.length) return;
         try {
@@ -76,6 +78,8 @@ export class FileHandling implements OnDestroy {
           this.consumerPanel().showError(message);
         }
       });
+
+
     });
   }
 

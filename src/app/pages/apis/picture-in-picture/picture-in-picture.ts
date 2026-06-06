@@ -59,7 +59,11 @@ export class PictureInPicture implements OnDestroy {
     if (!video) return;
     try {
       if (video.paused) await video.play();
+
+      // 👇🏻👇🏻👇🏻
       await video.requestPictureInPicture();
+
+
     } catch (err) {
       this.videoError.set(err instanceof Error ? err.message : 'Could not enter Picture-in-Picture.');
     }
@@ -71,7 +75,11 @@ export class PictureInPicture implements OnDestroy {
   async exitVideoPip(): Promise<void> {
     this.videoError.set('');
     try {
+
+      // 👇🏻👇🏻👇🏻
       await document.exitPictureInPicture();
+
+
     } catch (err) {
       this.videoError.set(err instanceof Error ? err.message : 'Could not exit Picture-in-Picture.');
     }
@@ -90,7 +98,11 @@ export class PictureInPicture implements OnDestroy {
   async openDocumentPip(): Promise<void> {
     this.docPipError.set('');
     try {
+
+      // 👇🏻👇🏻👇🏻
       const pipWin = await window.documentPictureInPicture!.requestWindow({ width: 340, height: 200 });
+
+
       this.docPipWindow = pipWin;
       this.isDocPipOpen.set(true);
 

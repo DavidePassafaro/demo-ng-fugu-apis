@@ -26,10 +26,16 @@ export class Clipboard implements OnDestroy {
     try {
       switch (payload.kind) {
         case 'text':
+
+          // 👇🏻👇🏻👇🏻
           await navigator.clipboard.writeText(payload.value);
+
+
           break;
 
         case 'html':
+
+          // 👇🏻👇🏻👇🏻
           await navigator.clipboard.write([
             new ClipboardItem({
               'text/html': new Blob([payload.value], { type: 'text/html' }),
@@ -38,12 +44,18 @@ export class Clipboard implements OnDestroy {
               }),
             }),
           ]);
+
+
           break;
 
         case 'image':
+
+          // 👇🏻👇🏻👇🏻
           await navigator.clipboard.write([
             new ClipboardItem({ [payload.blob.type]: payload.blob }),
           ]);
+
+
           break;
       }
       this.writePanel().showSuccess();
@@ -59,7 +71,11 @@ export class Clipboard implements OnDestroy {
    */
   async read(): Promise<void> {
     try {
+
+      // 👇🏻👇🏻👇🏻
       const clipboardItems = await navigator.clipboard.read();
+
+
       const results: ClipboardReadItem[] = [];
 
       for (const item of clipboardItems) {

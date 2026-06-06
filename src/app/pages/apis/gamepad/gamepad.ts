@@ -81,12 +81,19 @@ export class GamepadPage implements OnDestroy {
   constructor() {
     if (!this.isSupported) return;
 
+    // 👇🏻👇🏻👇🏻
     window.addEventListener('gamepadconnected', this.onConnected);
     window.addEventListener('gamepaddisconnected', this.onDisconnected);
 
+
+
     afterNextRender(() => {
+
+      // 👇🏻👇🏻👇🏻
       const existing = Array.from(navigator.getGamepads()).filter(Boolean);
       if (existing.length > 0) this.startLoop();
+
+
     });
   }
 
