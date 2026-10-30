@@ -1,6 +1,5 @@
 .pip-page {
   padding: 2.5rem;
-  max-width: 960px;
 
   @media (max-width: 768px) {
     padding: 1.25rem 1rem;
@@ -326,24 +325,4 @@
   margin: 0;
   font-size: 0.65rem;
   color: #6b7280;
-}
-
-/* Code block */
-.pip-code-block {
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  overflow: hidden;
-  max-width: 100%;
-}
-
-.pip-code {
-  margin: 0;
-  padding: 0.875rem;
-  font-family: 'Courier New', monospace;
-  font-size: 0.775rem;
-  color: var(--color-text-primary);
-  background: var(--color-bg);
-  white-space: pre;
-  overflow-x: auto;
-  line-height: 1.7;
 }

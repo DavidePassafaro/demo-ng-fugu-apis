@@ -178,15 +178,6 @@
       @if (docPipError()) {
         <p class="pip-error" role="alert">{{ docPipError() }}</p>
       }
-
-      <!-- Code snippet -->
-      <div class="pip-code-block" aria-label="Document PiP code example">
-        <pre class="pip-code">const pipWin = await documentPictureInPicture
-  .requestWindow(&#123; width: 340, height: 200 &#125;);
-
-// Move any element into the floating window
-pipWin.document.body.append(myElement);</pre>
-      </div>
     </section>
 
   </div>

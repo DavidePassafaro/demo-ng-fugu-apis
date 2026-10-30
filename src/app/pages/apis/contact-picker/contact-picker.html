@@ -72,15 +72,6 @@
         <code class="cp-toggle-code">multiple: {{ multiple() }}</code>
       </label>
 
-      <!-- Code preview -->
-      <div class="cp-code-block" aria-label="API call preview">
-        <p class="cp-code-header">API call</p>
-        <pre class="cp-code">navigator.contacts.select(
-  {{ '[' }}{{ [...selectedProperties()].map(p => '"' + p + '"').join(', ') }}{{ ']' }},
-  &#123; multiple: {{ multiple() }} &#125;
-)</pre>
-      </div>
-
       <!-- Pick button -->
       <button
         type="button"
