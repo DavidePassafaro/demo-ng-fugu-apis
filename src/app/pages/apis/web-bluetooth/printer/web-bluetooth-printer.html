@@ -1,0 +1,340 @@
+@if (!bluetoothService.isPrinterConnected()) {
+
+  <div class="printer-unsupported" role="alert">
+    <span aria-hidden="true">🚫</span>
+    <h2>No Bluetooth thermal printer connected</h2>
+    <p>Pair and connect your NETUM 58mm Bluetooth 4.0 printer from the connection page first.</p>
+    <a routerLink="/apis/web-bluetooth" class="back-btn">Connect a printer</a>
+  </div>
+
+} @else {
+
+  <div class="printer-workspace">
+
+    <!-- Full-width compact Top Controls Bar -->
+    <section class="printer-card printer-card--top" aria-label="Printer and image settings">
+
+      <!-- Row 1: Device info + Connected badge on the left, Quick actions on the right -->
+      <div class="top-bar-row">
+        <div class="printer-card-title">
+          <span class="printer-icon-badge" aria-hidden="true">🖨️</span>
+          <span class="printer-product-name">{{ deviceName() }}</span>
+          <span class="connected-badge" role="status">Connected</span>
+        </div>
+
+        <div class="quick-actions" role="group" aria-label="Printer actions">
+          <label class="action-btn action-btn--secondary action-btn--sm" aria-label="Import image file">
+            <span aria-hidden="true">📁</span>
+            Import image
+            <input
+              type="file"
+              accept="image/*"
+              class="file-input-hidden"
+              (change)="importImage($event)"
+              aria-hidden="true"
+              tabindex="-1"
+            />
+          </label>
+          <button
+            type="button"
+            class="action-btn action-btn--ghost action-btn--sm"
+            (click)="printTestReceipt()"
+            [disabled]="isPrinting()"
+          >
+            <span aria-hidden="true">🧾</span>
+            Test receipt
+          </button>
+          <button
+            type="button"
+            class="action-btn action-btn--ghost action-btn--sm"
+            (click)="feedPaper()"
+            [disabled]="isPrinting()"
+          >
+            <span aria-hidden="true">⏬</span>
+            Feed paper
+          </button>
+        </div>
+      </div>
+
+      <div class="card-divider" aria-hidden="true"></div>
+
+      <!-- Row 2: Dithering (all 4 modes) + Brightness + Contrast on a single row -->
+      <div class="top-bar-row top-bar-row--single">
+        <div class="pill-group" role="group" aria-label="1-bit dithering mode">
+          <span class="inline-label">Dither</span>
+          <button
+            type="button"
+            class="prop-toggle"
+            [class.prop-toggle--selected]="ditherMode() === 'floyd-steinberg'"
+            (click)="setDitherMode('floyd-steinberg')"
+            [attr.aria-pressed]="ditherMode() === 'floyd-steinberg'"
+          >Floyd-Steinberg</button>
+          <button
+            type="button"
+            class="prop-toggle"
+            [class.prop-toggle--selected]="ditherMode() === 'atkinson'"
+            (click)="setDitherMode('atkinson')"
+            [attr.aria-pressed]="ditherMode() === 'atkinson'"
+          >Atkinson</button>
+          <button
+            type="button"
+            class="prop-toggle"
+            [class.prop-toggle--selected]="ditherMode() === 'bayer'"
+            (click)="setDitherMode('bayer')"
+            [attr.aria-pressed]="ditherMode() === 'bayer'"
+          >Bayer 4×4</button>
+          <button
+            type="button"
+            class="prop-toggle"
+            [class.prop-toggle--selected]="ditherMode() === 'threshold'"
+            (click)="setDitherMode('threshold')"
+            [attr.aria-pressed]="ditherMode() === 'threshold'"
+          >Threshold</button>
+        </div>
+
+        <label class="slider-inline">
+          <span class="inline-label">Brightness</span>
+          <input
+            type="range" min="-80" max="80" step="5"
+            [value]="brightness()"
+            (input)="updateBrightness(+$any($event.target).value)"
+            class="range-input"
+            aria-label="Brightness"
+          />
+          <span class="range-val">{{ brightness() > 0 ? '+' + brightness() : brightness() }}</span>
+        </label>
+
+        <label class="slider-inline">
+          <span class="inline-label">Contrast</span>
+          <input
+            type="range" min="-80" max="80" step="5"
+            [value]="contrast()"
+            (input)="updateContrast(+$any($event.target).value)"
+            class="range-input"
+            aria-label="Contrast"
+          />
+          <span class="range-val">{{ contrast() > 0 ? '+' + contrast() : contrast() }}</span>
+        </label>
+      </div>
+
+    </section>
+
+    @if (printError()) {
+      <p class="printer-error" role="alert">{{ printError() }}</p>
+    }
+
+    <!-- Three-column workspace below top bar: Camera Booth | 58mm Thermal Preview | BLE GATT -->
+    <div class="workspace-body">
+
+      <!-- Column 1: Camera Booth -->
+      <section class="printer-card" aria-labelledby="camera-card-title">
+        <div class="card-heading">
+          <h2 id="camera-card-title" class="section-title">Camera Booth</h2>
+          <code class="api-badge">getUserMedia()</code>
+        </div>
+
+        <div class="video-viewport">
+          <video
+            #video
+            class="camera-video"
+            autoplay
+            playsinline
+            muted
+            aria-label="Live webcam preview for thermal selfie"
+          ></video>
+
+          @if (!isCameraActive()) {
+            <div class="video-placeholder">
+              <span aria-hidden="true">📷</span>
+              <p>Camera is paused</p>
+              <button type="button" class="action-btn action-btn--primary" (click)="startCamera()">
+                Start Camera
+              </button>
+            </div>
+          }
+        </div>
+
+        @if (cameraError()) {
+          <p class="camera-error" role="alert">{{ cameraError() }}</p>
+        }
+
+        <div class="card-footer-actions">
+          <button
+            type="button"
+            class="action-btn action-btn--primary action-btn--grow"
+            (click)="snapSelfie()"
+            [disabled]="!isCameraActive() || isSegmenting()"
+          >
+            @if (isSegmenting()) {
+              ⏳ Processing selfie…
+            } @else {
+              📸 Take Selfie
+            }
+          </button>
+          @if (isCameraActive()) {
+            <button type="button" class="action-btn action-btn--ghost" (click)="stopCamera()">
+              ⏹ Stop
+            </button>
+          }
+        </div>
+      </section>
+
+      <!-- Column 2: 58mm Thermal Receipt Preview -->
+      <section class="printer-card" aria-labelledby="receipt-card-title">
+        <div class="card-heading">
+          <div class="card-heading-left">
+            <h2 id="receipt-card-title" class="section-title">58mm Thermal Preview</h2>
+            <code class="api-badge">384 × {{ canvasHeight() }} dots</code>
+          </div>
+
+          <div class="preview-header-actions">
+            <button
+              type="button"
+              class="prop-toggle"
+              [class.prop-toggle--selected]="pthEdition()"
+              (click)="togglePthEdition()"
+              [attr.aria-pressed]="pthEdition()"
+            >
+              🏛️ Porto Tech Hub '26
+            </button>
+
+            <button
+              type="button"
+              class="prop-toggle"
+              [class.prop-toggle--selected]="removeBg()"
+              (click)="toggleRemoveBg()"
+              [attr.aria-pressed]="removeBg()"
+              [disabled]="isSegmenting()"
+            >
+              @if (isSegmenting()) {
+                ⏳ Segmenting…
+              } @else {
+                ✂️ No background
+              }
+            </button>
+          </div>
+        </div>
+
+        <div class="receipt-stage">
+          <div class="thermal-paper" [hidden]="!hasCapturedPhoto()">
+            <canvas
+              #receiptCanvas
+              class="receipt-canvas"
+              width="384"
+              height="240"
+              role="img"
+              aria-label="1-bit monochrome thermal receipt preview (384 pixels wide)"
+            ></canvas>
+          </div>
+
+          @if (!hasCapturedPhoto()) {
+            <div class="receipt-empty">
+              <span aria-hidden="true">🧾</span>
+              <p>Take a selfie or import an image to preview the 1-bit dithered 58mm thermal receipt.</p>
+            </div>
+          }
+        </div>
+
+        <div class="caption-controls">
+          <label class="caption-field">
+            <span>Receipt caption</span>
+            <input
+              type="text"
+              [value]="caption()"
+              (input)="updateCaption($any($event.target).value)"
+              placeholder="Optional caption printed under photo…"
+              maxlength="32"
+            />
+          </label>
+          <label class="timestamp-check">
+            <input
+              type="checkbox"
+              [checked]="includeTimestamp()"
+              (change)="toggleTimestamp()"
+            />
+            <span>Include date &amp; time</span>
+          </label>
+        </div>
+
+        <div class="card-footer-actions">
+          <button
+            type="button"
+            class="action-btn action-btn--success action-btn--grow"
+            (click)="printCanvas()"
+            [disabled]="!hasCapturedPhoto() || isPrinting() || isSegmenting()"
+          >
+            @if (printProgress() !== null) {
+              ⏳ Printing… {{ printProgress() }}%
+            } @else {
+              🖨️ Print Selfie
+            }
+          </button>
+          <button
+            type="button"
+            class="action-btn action-btn--ghost"
+            (click)="saveReceiptPng()"
+            [disabled]="!hasCapturedPhoto()"
+            title="Download 1-bit dithered PNG"
+          >
+            💾 Save PNG
+          </button>
+        </div>
+      </section>
+
+      <!-- Right side: BLE GATT Inspector Panel -->
+      <aside class="ble-panel" aria-label="BLE GATT & ESC/POS packet inspector">
+        <h3 class="ble-panel-title">BLE GATT <code>GS v 0</code></h3>
+
+        <p class="ble-panel-hint">
+          The 384px 1-bit canvas is sliced into 24-row ESC/POS raster bands
+          (<code>0x1D 0x76 0x30</code>) and streamed in 96-byte BLE GATT chunks.
+        </p>
+
+        @if (gattDetails(); as gatt) {
+          <div class="ble-gatt-meta">
+            <div class="ble-meta-row">
+              <span class="ble-meta-label">Service UUID</span>
+              <code class="ble-meta-val">{{ gatt.serviceUuid }}</code>
+            </div>
+            <div class="ble-meta-row">
+              <span class="ble-meta-label">Write Characteristic</span>
+              <code class="ble-meta-val">{{ gatt.characteristicUuid }}</code>
+            </div>
+            <div class="ble-meta-row">
+              <span class="ble-meta-label">GATT Write Mode</span>
+              <code class="ble-meta-val ble-meta-val--accent">{{ gatt.writeMode }}</code>
+            </div>
+          </div>
+        }
+
+        @if (printProgress() !== null) {
+          <div class="ble-progress" role="progressbar" [attr.aria-valuenow]="printProgress()" aria-valuemax="100">
+            <div class="ble-progress-bar" [style.width.%]="printProgress()"></div>
+          </div>
+        }
+
+        @if (!lastPacket()) {
+          <div class="ble-empty">
+            <span aria-hidden="true">🖨️</span>
+            <p>No packets sent yet.<br>Take a selfie and press <strong>Print Selfie</strong>.</p>
+          </div>
+        } @else {
+          <div class="ble-log" aria-label="Recent BLE GATT packets">
+            <p class="ble-log-label">GATT write log (last 8 chunks)</p>
+            <div class="ble-log-list" aria-live="polite" aria-atomic="false">
+              @for (pkt of recentPackets(); track pkt.timestamp + '-' + pkt.chunkIndex) {
+                <div class="ble-log-row">
+                  <code class="ble-log-id">#{{ pkt.chunkIndex }}/{{ pkt.totalChunks }}</code>
+                  <code class="ble-log-hex">{{ pkt.hex }}</code>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </aside>
+
+    </div>
+
+  </div>
+
+}

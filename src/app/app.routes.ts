@@ -44,6 +44,26 @@ export const routes: Routes = [
         ],
       },
       {
+        path: 'web-bluetooth',
+        loadComponent: () => import('./pages/apis/web-bluetooth/web-bluetooth').then((m) => m.WebBluetooth),
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./pages/apis/web-bluetooth/connect/web-bluetooth-connect').then(
+                (m) => m.WebBluetoothConnect,
+              ),
+          },
+          {
+            path: 'printer',
+            loadComponent: () =>
+              import('./pages/apis/web-bluetooth/printer/web-bluetooth-printer').then(
+                (m) => m.WebBluetoothPrinter,
+              ),
+          },
+        ],
+      },
+      {
         path: 'badging',
         loadComponent: () => import('./pages/apis/badging/badging').then((m) => m.Badging),
       },

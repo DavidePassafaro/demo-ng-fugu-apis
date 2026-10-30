@@ -89,6 +89,15 @@ export const FUGU_APIS: FuguApi[] = [
     available: true,
     constraints: ['device-required'],
   },
+  {
+    id: 'web-bluetooth',
+    name: 'Web Bluetooth API',
+    description: 'Connect to a 58mm ESC/POS BLE thermal printer, snap a selfie, and print 1-bit dithered photos.',
+    path: '/apis/web-bluetooth',
+    icon: '🖨️',
+    available: true,
+    constraints: ['device-required'],
+  },
   // Mobile only
   {
     id: 'contact-picker',

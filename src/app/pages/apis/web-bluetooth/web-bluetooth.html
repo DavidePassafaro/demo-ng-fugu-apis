@@ -1,0 +1,33 @@
+<article class="web-bluetooth-page">
+  <header class="page-header">
+    <span class="page-icon" aria-hidden="true">🖨️</span>
+    <div>
+      <h1 class="page-title">Web Bluetooth API</h1>
+      <p class="page-subtitle">
+        Connect to a 58mm ESC/POS Bluetooth 4.0 thermal printer (e.g. NETUM) using
+        <code>navigator.bluetooth.requestDevice()</code>, snap a selfie, and print it on receipt paper.
+      </p>
+    </div>
+  </header>
+
+  @if (!bluetoothService.isSupported) {
+    <div class="availability-banner availability-banner--error" role="alert">
+      <span aria-hidden="true">⚠️</span>
+      <span>
+        <strong>API not available.</strong>
+        <code>navigator.bluetooth</code> is not supported in this browser.
+        Use Chrome or Edge 56+ on desktop or Android.
+      </span>
+    </div>
+  } @else {
+    <div class="availability-banner availability-banner--ok" role="status">
+      <span aria-hidden="true">✓</span>
+      <span>
+        <strong>API available.</strong>
+        Pair your Bluetooth 4.0 (BLE) thermal printer to get started.
+      </span>
+    </div>
+  }
+
+  <router-outlet />
+</article>
