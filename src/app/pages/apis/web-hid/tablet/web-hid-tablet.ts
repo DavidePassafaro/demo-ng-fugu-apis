@@ -9,7 +9,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { WebHidService } from '../../../../shared/services/web-hid.service';
+import { WebHidService } from '../web-hid.service';
 
 type Tool = 'brush' | 'eraser';
 
@@ -115,15 +115,19 @@ export class WebHidTablet implements OnDestroy {
    * an `inputreport` listener to each one via `device.open()`.
    */
   private async openAllInterfaces(): Promise<void> {
+    if (this.hidService.isSupported && this.hidService.devices().length === 0) {
+      const all = await navigator.hid.getDevices();
+      this.hidService.devices.set(all);
+    }
+
     for (const [index, device] of this.hidService.huionDevices().entries()) {
       try {
-        if (!device.opened) await device.open();
-
         const listener = (event: HIDInputReportEvent): void => {
           this.onInputReport(event, index);
         };
 
         // 👇🏻👇🏻👇🏻
+        if (!device.opened) await device.open();
         device.addEventListener('inputreport', listener);
 
 

@@ -1,6 +1,6 @@
-import { Component, inject, effect } from '@angular/core';
+import { Component, OnDestroy, effect, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { WebHidService, HUION_VENDOR_ID } from '../../../../shared/services/web-hid.service';
+import { HUION_VENDOR_ID, WebHidService } from '../web-hid.service';
 
 @Component({
   selector: 'app-web-hid-connect',
@@ -8,7 +8,7 @@ import { WebHidService, HUION_VENDOR_ID } from '../../../../shared/services/web-
   templateUrl: './web-hid-connect.html',
   styleUrl: './web-hid-connect.scss',
 })
-export class WebHidConnect {
+export class WebHidConnect implements OnDestroy {
   protected readonly hidService = inject(WebHidService);
   private readonly router = inject(Router);
 
@@ -20,7 +20,25 @@ export class WebHidConnect {
   // This prevents redirect when the page loads with a device already paired.
   private wasConnected = this.hidService.isTabletConnected();
 
+  private readonly onHidConnect = (_e: HIDConnectionEvent): void => {
+    void this.refreshDevices();
+  };
+
+  private readonly onHidDisconnect = (e: HIDConnectionEvent): void => {
+    this.hidService.removeDevice(e.device);
+  };
+
   constructor() {
+    if (this.hidService.isSupported) {
+
+      // 👇🏻👇🏻👇🏻
+      navigator.hid.addEventListener('connect', this.onHidConnect);
+      navigator.hid.addEventListener('disconnect', this.onHidDisconnect);
+
+
+      void this.refreshDevices();
+    }
+
     effect(() => {
       const connected = this.hidService.isTabletConnected();
       if (connected && !this.wasConnected) {
@@ -37,9 +55,13 @@ export class WebHidConnect {
   async requestAny(): Promise<void> {
     this.error = '';
     try {
-      await this.hidService.requestAny();
-      // If the user re-selected an already-known Huion, isTabletConnected stays
-      // true and the effect won't fire — navigate explicitly.
+
+      // 👇🏻👇🏻👇🏻
+      const granted = await navigator.hid.requestDevice({ filters: [] });
+
+
+      this.hidService.mergeDevices(granted);
+
       if (this.hidService.isTabletConnected()) {
         void this.router.navigate(['/apis/web-hid/tablet']);
       }
@@ -57,8 +79,15 @@ export class WebHidConnect {
   async requestTablet(): Promise<void> {
     this.error = '';
     try {
-      await this.hidService.requestTablet();
-      // Same: explicit navigate in case the device was already in the list.
+
+      // 👇🏻👇🏻👇🏻
+      const granted = await navigator.hid.requestDevice({
+        filters: [{ vendorId: HUION_VENDOR_ID }],
+      });
+
+
+      this.hidService.mergeDevices(granted);
+
       if (this.hidService.isTabletConnected()) {
         void this.router.navigate(['/apis/web-hid/tablet']);
       }
@@ -67,5 +96,23 @@ export class WebHidConnect {
         this.error = err.message;
       }
     }
+  }
+
+  /**
+   * Re-enumerates previously granted HID devices via `navigator.hid.getDevices()`.
+   */
+  private async refreshDevices(): Promise<void> {
+
+    // 👇🏻👇🏻👇🏻
+    const all = await navigator.hid.getDevices();
+
+
+    this.hidService.devices.set(all);
+  }
+
+  ngOnDestroy(): void {
+    if (!this.hidService.isSupported) return;
+    navigator.hid.removeEventListener('connect', this.onHidConnect);
+    navigator.hid.removeEventListener('disconnect', this.onHidDisconnect);
   }
 }

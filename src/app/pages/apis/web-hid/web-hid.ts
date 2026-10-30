@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { WebHidService } from '../../../shared/services/web-hid.service';
+import { WebHidService } from './web-hid.service';
 
 @Component({
   selector: 'app-web-hid',
