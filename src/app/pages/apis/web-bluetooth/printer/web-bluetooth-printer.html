@@ -242,8 +242,8 @@
               type="text"
               [value]="caption()"
               (input)="updateCaption($any($event.target).value)"
-              placeholder="Optional caption printed under photo…"
-              maxlength="32"
+              placeholder="Optional caption (wraps up to 2 lines)…"
+              maxlength="60"
             />
           </label>
           <label class="timestamp-check">

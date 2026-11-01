@@ -264,8 +264,9 @@ export class ThermalPrinterImageService {
     const width = THERMAL_PRINT_WIDTH;
     const imgHeight = sourceCanvas.height;
     const headerHeight = options.pthEdition ? 74 : 0;
-    const hasCaption = options.caption.trim().length > 0 || options.includeTimestamp;
-    const footerHeight = hasCaption ? 56 : 0;
+    const captionLines = this.wrapCaptionLines(options.caption, 30);
+    const hasCaption = captionLines.length > 0 || options.includeTimestamp;
+    const footerHeight = !hasCaption ? 0 : captionLines.length > 1 ? 78 : 56;
     const totalHeight = headerHeight + imgHeight + footerHeight;
 
     targetCanvas.width = width;
@@ -308,7 +309,7 @@ export class ThermalPrinterImageService {
       ctx.putImageData(headerData, 0, 0);
     }
 
-    // 3. Draw crisp 1-bit footer caption/timestamp if enabled
+    // 3. Draw crisp 1-bit footer caption (up to 2 lines) + timestamp if enabled
     if (hasCaption) {
       const footerY = headerHeight + imgHeight;
       ctx.fillStyle = '#ffffff';
@@ -317,9 +318,11 @@ export class ThermalPrinterImageService {
       ctx.fillStyle = '#000000';
       ctx.textAlign = 'center';
 
-      if (options.caption.trim()) {
+      if (captionLines.length > 0) {
         ctx.font = 'bold 18px "Courier New", monospace';
-        ctx.fillText(options.caption.trim(), width / 2, footerY + 24);
+        captionLines.forEach((line, idx) => {
+          ctx.fillText(line, width / 2, footerY + 24 + idx * 22);
+        });
       }
 
       if (options.includeTimestamp) {
@@ -333,7 +336,8 @@ export class ThermalPrinterImageService {
           second: '2-digit',
           hour12: false,
         });
-        ctx.fillText(formattedDate, width / 2, footerY + 44);
+        const dateY = captionLines.length > 1 ? footerY + 66 : captionLines.length === 1 ? footerY + 44 : footerY + 28;
+        ctx.fillText(formattedDate, width / 2, dateY);
       }
 
       const footerData = ctx.getImageData(0, footerY, width, footerHeight);
@@ -350,6 +354,28 @@ export class ThermalPrinterImageService {
     }
 
     return totalHeight;
+  }
+
+  /**
+   * Wraps the receipt caption into at most 2 lines of `maxChars` characters,
+   * preserving consecutive spaces typed by the user.
+   */
+  private wrapCaptionLines(raw: string, maxChars = 30): string[] {
+    if (!raw.trim()) return [];
+    if (raw.length <= maxChars) return [raw];
+
+    // Find the last space at or before maxChars so words aren't cut in half
+    const breakIdx = raw.lastIndexOf(' ', maxChars);
+    if (breakIdx > 0) {
+      const line1 = raw.slice(0, breakIdx);
+      const line2 = raw.slice(breakIdx + 1, breakIdx + 1 + maxChars);
+      return line2.length > 0 ? [line1, line2] : [line1];
+    }
+
+    // No space found within the first line: hard-split at maxChars
+    const line1 = raw.slice(0, maxChars);
+    const line2 = raw.slice(maxChars, maxChars * 2);
+    return line2.length > 0 ? [line1, line2] : [line1];
   }
 
   /**
