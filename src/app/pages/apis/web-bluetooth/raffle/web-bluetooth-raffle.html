@@ -1,0 +1,225 @@
+<div class="raffle-workspace">
+
+  <!-- Top Navigation & Room Controls Bar -->
+  <section class="raffle-card raffle-card--top" aria-label="Raffle controls">
+    <div class="top-bar-row">
+      <div class="raffle-title-group">
+        <a routerLink="/apis/web-bluetooth/printer" class="action-btn action-btn--ghost action-btn--sm">
+          ← Photo Booth
+        </a>
+        <span class="raffle-badge-title">🎟️ Live Sticker Raffle</span>
+        <span
+          class="broker-badge"
+          [class.broker-badge--online]="raffleService.isBrokerConnected()"
+          role="status"
+        >
+          {{ raffleService.isBrokerConnected() ? '● Live Room: ' + raffleService.roomId() : '⏳ Connecting room…' }}
+        </span>
+      </div>
+
+      <div class="quick-actions">
+        <button
+          type="button"
+          class="action-btn action-btn--secondary action-btn--sm"
+          (click)="addDemoParticipant()"
+        >
+          🧪 + Demo Participant
+        </button>
+        <button
+          type="button"
+          class="action-btn action-btn--ghost action-btn--sm"
+          (click)="showUrlConfig.set(!showUrlConfig())"
+        >
+          ⚙️ QR Host URL
+        </button>
+        <button
+          type="button"
+          class="action-btn action-btn--ghost action-btn--sm"
+          (click)="raffleService.resetRoom(); backToLobby()"
+        >
+          🔄 New Room
+        </button>
+      </div>
+    </div>
+
+    @if (showUrlConfig()) {
+      <div class="url-config-row">
+        <label class="url-config-label">
+          <span>Public URL for QR Code (use your deployed URL if running localhost on stage):</span>
+          <input
+            type="url"
+            [value]="raffleService.publicBaseUrl()"
+            (input)="raffleService.updatePublicBaseUrl($any($event.target).value)"
+            placeholder="https://your-deployed-app.vercel.app"
+          />
+        </label>
+      </div>
+    }
+  </section>
+
+  @if (phase() === 'lobby') {
+
+    <!-- PHASE 1: QR CODE + WAITING ROOM -->
+    <div class="lobby-grid">
+
+      <!-- Left: Big QR Code for Audience -->
+      <section class="raffle-card qr-card" aria-labelledby="qr-heading">
+        <h2 id="qr-heading" class="section-title">1. Scan to Join the Raffle</h2>
+        <p class="qr-subtitle">
+          Scan with your smartphone camera, snap a selfie, and enter your name!
+        </p>
+
+        <div class="qr-frame">
+          @if (qrDataUrl()) {
+            <img [src]="qrDataUrl()" alt="QR code to join the live sticker raffle" class="qr-image" />
+          }
+        </div>
+
+        <div class="qr-url-bar">
+          <code class="qr-url-text">{{ raffleService.joinUrl() }}</code>
+          <button type="button" class="action-btn action-btn--ghost action-btn--sm" (click)="copyJoinUrl()">
+            {{ copiedLink() ? '✓ Copied' : '📋 Copy' }}
+          </button>
+          <a
+            [href]="raffleService.joinUrl()"
+            target="_blank"
+            rel="noopener"
+            class="action-btn action-btn--secondary action-btn--sm"
+          >
+            ↗ Open Portal
+          </a>
+        </div>
+      </section>
+
+      <!-- Right: Joined Participants (Mystery Cards until Reveal) -->
+      <section class="raffle-card participants-card" aria-labelledby="participants-heading">
+        <div class="participants-header">
+          <div>
+            <h2 id="participants-heading" class="section-title">2. Joined Participants</h2>
+            <p class="participants-subtitle">
+              Photos remain hidden until you start the reveal animation!
+            </p>
+          </div>
+          <div class="counter-pill" aria-live="polite">
+            <span class="counter-num">{{ raffleService.participants().length }}</span>
+            <span class="counter-label">ready</span>
+          </div>
+        </div>
+
+        @if (raffleService.participants().length === 0) {
+          <div class="waiting-empty">
+            <span class="waiting-icon" aria-hidden="true">📱</span>
+            <p>Waiting for participants to scan the QR code and send their selfie…</p>
+          </div>
+        } @else {
+          <ul class="mystery-grid" role="list">
+            @for (p of raffleService.participants(); track p.id; let idx = $index) {
+              <li class="mystery-chip">
+                <span class="mystery-avatar" aria-hidden="true">🎭</span>
+                <span class="mystery-name">{{ p.name }}</span>
+                <span class="mystery-num">#{{ idx + 1 }}</span>
+              </li>
+            }
+          </ul>
+        }
+
+        <div class="lobby-footer">
+          <button
+            type="button"
+            class="action-btn action-btn--primary action-btn--lg"
+            (click)="startRaffleAnimation()"
+            [disabled]="raffleService.participants().length === 0"
+          >
+            🎬 Reveal Photos &amp; Pick Winner ({{ raffleService.participants().length }})
+          </button>
+
+          @if (raffleService.participants().length > 0) {
+            <button
+              type="button"
+              class="action-btn action-btn--ghost"
+              (click)="raffleService.clearParticipants()"
+            >
+              🗑️ Clear
+            </button>
+          }
+        </div>
+      </section>
+
+    </div>
+
+  } @else {
+
+    <!-- PHASE 2 & 3: PHOTO-BY-PHOTO REVEAL + ROULETTE + WINNER -->
+    <section class="raffle-card stage-card" aria-label="Raffle reveal stage">
+      <div class="stage-header">
+        <div class="stage-status">
+          @if (phase() === 'revealing') {
+            <span class="stage-pill stage-pill--reveal">
+              ✨ Revealing photos… ({{ revealedCount() }} / {{ raffleService.participants().length }})
+            </span>
+          } @else if (phase() === 'roulette') {
+            <span class="stage-pill stage-pill--roulette">
+              🎲 Selecting random winner…
+            </span>
+          } @else if (phase() === 'winner') {
+            <span class="stage-pill stage-pill--winner">
+              🏆 We have a Winner!
+            </span>
+          }
+        </div>
+
+        <div class="stage-actions">
+          <button type="button" class="action-btn action-btn--ghost action-btn--sm" (click)="backToLobby()">
+            ← Back to QR Lobby
+          </button>
+          @if (phase() === 'winner') {
+            <button type="button" class="action-btn action-btn--secondary action-btn--sm" (click)="startRaffleAnimation()">
+              🎲 Draw Again
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Winner Celebration Banner -->
+      @if (phase() === 'winner' && winner(); as win) {
+        <div class="winner-banner" role="alert">
+          <img [src]="win.photoDataUrl" [alt]="win.name" class="winner-banner-photo" />
+          <div class="winner-banner-info">
+            <span class="winner-kicker">🏆 STICKER RAFFLE WINNER</span>
+            <h3 class="winner-name">{{ win.name }}</h3>
+            <p class="winner-hint">
+              Ready to customize dithering, remove background, and print on the 58mm thermal printer!
+            </p>
+          </div>
+          <button
+            type="button"
+            class="action-btn action-btn--success action-btn--lg"
+            (click)="configureAndPrintWinner()"
+          >
+            🖨️ Configure &amp; Print Sticker →
+          </button>
+        </div>
+      }
+
+      <!-- Photo Wall Grid (cards pop in one by one) -->
+      <div class="photo-wall">
+        @for (p of visibleParticipants(); track p.id; let idx = $index) {
+          <article
+            class="polaroid-card"
+            [class.polaroid-card--spotlight]="activeSpotlightIndex() === idx"
+            [class.polaroid-card--winner]="phase() === 'winner' && activeSpotlightIndex() === idx"
+            [class.polaroid-card--dimmed]="phase() === 'winner' && activeSpotlightIndex() !== idx"
+          >
+            <div class="polaroid-img-wrap">
+              <img [src]="p.photoDataUrl" [alt]="p.name" class="polaroid-img" />
+              <span class="polaroid-badge">#{{ idx + 1 }}</span>
+            </div>
+            <div class="polaroid-caption">{{ p.name }}</div>
+          </article>
+        }
+      </div>
+    </section>
+
+  }
+
+</div>

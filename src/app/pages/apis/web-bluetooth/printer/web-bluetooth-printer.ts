@@ -9,6 +9,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { RaffleParticipant, RaffleService } from '../raffle.service';
 import {
   DitherMode,
   ThermalPrinterImageService,
@@ -28,6 +29,7 @@ import {
 })
 export class WebBluetoothPrinter implements OnDestroy {
   protected readonly bluetoothService = inject(WebBluetoothService);
+  protected readonly raffleService = inject(RaffleService);
   private readonly imageService = inject(ThermalPrinterImageService);
 
   private readonly videoRef = viewChild<ElementRef<HTMLVideoElement>>('video');
@@ -82,9 +84,14 @@ export class WebBluetoothPrinter implements OnDestroy {
         }
       });
 
+      const winner = this.raffleService.consumeWinner();
+      if (winner) {
+        void this.loadRaffleWinner(winner);
+      }
+
       if (this.bluetoothService.isPrinterConnected()) {
         void this.openPrinterConnection();
-        if (this.isCameraSupported) {
+        if (!winner && this.isCameraSupported) {
           void this.startCamera();
         }
       }
@@ -435,6 +442,21 @@ export class WebBluetoothPrinter implements OnDestroy {
       this.foregroundMask = await this.imageService.computeForegroundMask(this.sourceCanvas);
     } finally {
       this.isSegmenting.set(false);
+    }
+  }
+
+  private async loadRaffleWinner(winner: RaffleParticipant): Promise<void> {
+    try {
+      this.sourceCanvas = await this.imageService.loadDataUrl(winner.photoDataUrl);
+      this.foregroundMask = null;
+      this.caption.set(winner.name);
+      this.removeBg.set(true);
+      this.hasCapturedPhoto.set(true);
+      this.renderThermalPreview();
+      await this.runSegmentation();
+      this.renderThermalPreview();
+    } catch {
+      this.printError.set('Could not load raffle winner photo.');
     }
   }
 

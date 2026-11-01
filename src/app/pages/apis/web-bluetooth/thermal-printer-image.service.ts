@@ -141,12 +141,18 @@ export class ThermalPrinterImageService {
    * and handles transparent PNGs (inverting white-on-transparent logos before compositing on white).
    */
   loadImageFile(file: File): Promise<HTMLCanvasElement> {
+    const objectUrl = URL.createObjectURL(file);
+    return this.loadDataUrl(objectUrl).finally(() => URL.revokeObjectURL(objectUrl));
+  }
+
+  /**
+   * Decodes an image URL or base64 data URL into a 384px-wide normalized source canvas.
+   */
+  loadDataUrl(srcUrl: string): Promise<HTMLCanvasElement> {
     return new Promise((resolve, reject) => {
-      const objectUrl = URL.createObjectURL(file);
       const img = new Image();
 
       img.onload = () => {
-        URL.revokeObjectURL(objectUrl);
         const natW = img.naturalWidth || img.width || THERMAL_PRINT_WIDTH;
         const natH = img.naturalHeight || img.height || 240;
 
@@ -213,11 +219,10 @@ export class ThermalPrinterImageService {
       };
 
       img.onerror = () => {
-        URL.revokeObjectURL(objectUrl);
         reject(new Error('Could not decode the selected image file.'));
       };
 
-      img.src = objectUrl;
+      img.src = srcUrl;
     });
   }
 

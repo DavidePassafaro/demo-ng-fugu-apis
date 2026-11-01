@@ -6,6 +6,10 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/home/home').then((m) => m.Home),
   },
   {
+    path: 'raffle-join',
+    loadComponent: () => import('./pages/raffle-join/raffle-join').then((m) => m.RaffleJoin),
+  },
+  {
     path: 'apis',
     loadComponent: () => import('./shared/components/apis-layout/apis-layout').then((m) => m.ApisLayout),
     children: [
@@ -59,6 +63,13 @@ export const routes: Routes = [
             loadComponent: () =>
               import('./pages/apis/web-bluetooth/printer/web-bluetooth-printer').then(
                 (m) => m.WebBluetoothPrinter,
+              ),
+          },
+          {
+            path: 'raffle',
+            loadComponent: () =>
+              import('./pages/apis/web-bluetooth/raffle/web-bluetooth-raffle').then(
+                (m) => m.WebBluetoothRaffle,
               ),
           },
         ],

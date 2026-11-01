@@ -23,6 +23,17 @@
         </div>
 
         <div class="quick-actions" role="group" aria-label="Printer actions">
+          <a
+            routerLink="/apis/web-bluetooth/raffle"
+            class="action-btn action-btn--primary action-btn--sm"
+            aria-label="Open QR Code Live Raffle"
+          >
+            <span aria-hidden="true">🎟️</span>
+            Live Raffle
+            @if (raffleService.participants().length > 0) {
+              <span>({{ raffleService.participants().length }})</span>
+            }
+          </a>
           <label class="action-btn action-btn--secondary action-btn--sm" aria-label="Import image file">
             <span aria-hidden="true">📁</span>
             Import image
