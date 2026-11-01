@@ -18,20 +18,23 @@
       </div>
 
       <div class="quick-actions">
-        <button
-          type="button"
-          class="action-btn action-btn--secondary action-btn--sm"
-          (click)="addDemoParticipant()"
-        >
-          🧪 + Demo Participant
-        </button>
-        <button
-          type="button"
-          class="action-btn action-btn--ghost action-btn--sm"
-          (click)="showUrlConfig.set(!showUrlConfig())"
-        >
-          ⚙️ QR Host URL
-        </button>
+        @if (isLocalhost) {
+          <button
+            type="button"
+            class="action-btn action-btn--secondary action-btn--sm"
+            (click)="addDemoParticipant()"
+            [disabled]="raffleService.entriesLocked()"
+          >
+            🧪 + Demo Participant
+          </button>
+          <button
+            type="button"
+            class="action-btn action-btn--ghost action-btn--sm"
+            (click)="showUrlConfig.set(!showUrlConfig())"
+          >
+            ⚙️ QR Host URL
+          </button>
+        }
         <button
           type="button"
           class="action-btn action-btn--ghost action-btn--sm"
@@ -42,7 +45,7 @@
       </div>
     </div>
 
-    @if (showUrlConfig()) {
+    @if (isLocalhost && showUrlConfig()) {
       <div class="url-config-row">
         <label class="url-config-label">
           <span>Public URL for QR Code (use your deployed URL if running localhost on stage):</span>

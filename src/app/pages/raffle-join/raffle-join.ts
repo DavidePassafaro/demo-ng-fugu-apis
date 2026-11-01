@@ -182,8 +182,10 @@ export class RaffleJoin implements OnDestroy {
         timestamp: Date.now(),
       });
       this.isSubmitted.set(true);
-    } catch {
-      this.error.set('Could not send your photo. Please try again.');
+    } catch (err) {
+      this.error.set(
+        err instanceof Error ? err.message : 'Could not send your photo. Please try again.',
+      );
     } finally {
       this.isSubmitting.set(false);
     }

@@ -35,6 +35,10 @@ export class WebBluetoothRaffle implements OnDestroy {
   protected readonly raffleService = inject(RaffleService);
   private readonly router = inject(Router);
 
+  readonly isLocalhost =
+    typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
   readonly phase = signal<RafflePhase>('lobby');
   readonly qrDataUrl = signal<string>('');
   readonly showUrlConfig = signal(false);
@@ -76,6 +80,9 @@ export class WebBluetoothRaffle implements OnDestroy {
     const list = this.raffleService.participants();
     if (list.length === 0) return;
 
+    // Lock the room so no new participants can upload once the draw has started
+    this.raffleService.lockEntries();
+
     this.clearTimers();
     this.winner.set(null);
     this.activeSpotlightIndex.set(null);
@@ -97,12 +104,13 @@ export class WebBluetoothRaffle implements OnDestroy {
   }
 
   /**
-   * Sends the winner's photo and name to the Thermal Printer workspace
-   * so the speaker can configure dithering/brightness/contrast and print the sticker.
+   * Removes the winner from the raffle list and sends their photo and name
+   * to the Thermal Printer workspace to configure and print the sticker.
    */
   configureAndPrintWinner(): void {
     const selected = this.winner();
     if (!selected) return;
+    this.raffleService.removeParticipant(selected.id);
     this.raffleService.pendingWinner.set(selected);
     void this.router.navigate(['/apis/web-bluetooth/printer']);
   }

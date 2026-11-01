@@ -2,7 +2,7 @@
   <div class="join-card">
 
     <header class="join-header">
-      <span class="join-kicker">PORTO TECH HUB '26 · PROJECT FUGU</span>
+      <span class="join-kicker">PROJECT FUGU · WEB BLUETOOTH</span>
       <h1 class="join-title">🎟️ Thermal Sticker Raffle</h1>
       @if (roomId()) {
         <span class="join-room-pill">
@@ -15,6 +15,12 @@
       <div class="join-alert" role="alert">
         ⚠️ Invalid or missing room code. Please scan the QR code shown on stage.
       </div>
+    } @else if (raffleService.entriesLocked() && !isSubmitted()) {
+      <section class="join-success" role="status" aria-live="polite">
+        <div class="success-icon" aria-hidden="true">🔒</div>
+        <h2>Entries Closed</h2>
+        <p>The raffle draw has already started on stage — watch the big screen to see the winner!</p>
+      </section>
     } @else if (isSubmitted()) {
 
       <section class="join-success" role="status" aria-live="polite">
@@ -27,9 +33,11 @@
           <span>{{ participantName() }}</span>
         </div>
 
-        <button type="button" class="join-btn join-btn--secondary" (click)="isSubmitted.set(false)">
-          ✏️ Update Photo or Name
-        </button>
+        @if (!raffleService.entriesLocked()) {
+          <button type="button" class="join-btn join-btn--secondary" (click)="isSubmitted.set(false)">
+            ✏️ Update Photo or Name
+          </button>
+        }
       </section>
 
     } @else {

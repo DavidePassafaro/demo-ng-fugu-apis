@@ -8,10 +8,11 @@ export interface RaffleParticipant {
 }
 
 interface RaffleWireMessage {
-  type: 'join' | 'ack';
+  type: 'join' | 'ack' | 'closed' | 'status';
   roomId: string;
   participant?: RaffleParticipant;
   ackId?: string;
+  locked?: boolean;
 }
 
 const MQTT_BROKERS = [
@@ -22,6 +23,7 @@ const MQTT_BROKERS = [
 const ROOM_STORAGE_KEY = 'fugu_raffle_room_id';
 const BASE_URL_STORAGE_KEY = 'fugu_raffle_base_url';
 const PARTICIPANTS_STORAGE_PREFIX = 'fugu_raffle_participants_';
+const LOCKED_STORAGE_PREFIX = 'fugu_raffle_locked_';
 
 /**
  * Minimal, zero-dependency MQTT 3.1.1 over WebSocket client supporting
@@ -271,6 +273,9 @@ export class RaffleService {
     this.loadStoredParticipants(this.roomId()),
   );
 
+  /** True once the raffle draw has started; blocks any new participant uploads. */
+  readonly entriesLocked = signal<boolean>(this.loadLockedState(this.roomId()));
+
   readonly isBrokerConnected = signal(false);
 
   /** Winner selected in the Raffle page, ready to be configured & printed in the Printer page. */
@@ -279,14 +284,14 @@ export class RaffleService {
   private connections: MqttOverWsConnection[] = [];
   private broadcastChannel: BroadcastChannel | null = null;
   private activeRoomTopic = '';
-  private ackListeners = new Map<string, () => void>();
+  private ackListeners = new Map<string, { resolve: () => void; reject: (err: Error) => void }>();
 
   /**
    * Connects the host or mobile client to the realtime room channel
    * (Dual MQTT-over-WSS brokers + local BroadcastChannel).
    */
   connectToRoom(roomId: string, isHost: boolean): void {
-    const topic = `fugu-pth26-raffle/${roomId}`;
+    const topic = `fugu-raffle/${roomId}`;
     if (this.activeRoomTopic === topic && this.connections.length > 0) {
       return;
     }
@@ -331,19 +336,48 @@ export class RaffleService {
    * Generates a fresh room ID and clears previous participants.
    */
   resetRoom(): void {
-    const nextRoom = 'pth26-' + Math.random().toString(36).slice(2, 7);
+    const nextRoom = 'fugu-' + Math.random().toString(36).slice(2, 7);
     if (typeof sessionStorage !== 'undefined') {
       sessionStorage.setItem(ROOM_STORAGE_KEY, nextRoom);
     }
     this.roomId.set(nextRoom);
     this.participants.set([]);
+    this.entriesLocked.set(false);
     this.saveParticipants(nextRoom, []);
+    this.saveLockedState(nextRoom, false);
     this.connectToRoom(nextRoom, true);
   }
 
   clearParticipants(): void {
     this.participants.set([]);
+    this.entriesLocked.set(false);
     this.saveParticipants(this.roomId(), []);
+    this.saveLockedState(this.roomId(), false);
+    this.broadcastRaw(
+      JSON.stringify({ type: 'status', roomId: this.roomId(), locked: false } satisfies RaffleWireMessage),
+    );
+  }
+
+  /**
+   * Locks the room when the raffle draw starts so no new participants can upload photos.
+   */
+  lockEntries(): void {
+    this.entriesLocked.set(true);
+    this.saveLockedState(this.roomId(), true);
+    this.broadcastRaw(
+      JSON.stringify({ type: 'status', roomId: this.roomId(), locked: true } satisfies RaffleWireMessage),
+    );
+  }
+
+  /**
+   * Removes a participant by id (used to remove the winner once sent to print).
+   */
+  removeParticipant(participantId: string): void {
+    this.participants.update((prev) => {
+      const next = prev.filter((p) => p.id !== participantId);
+      this.saveParticipants(this.roomId(), next);
+      return next;
+    });
   }
 
   updatePublicBaseUrl(url: string): void {
@@ -356,8 +390,10 @@ export class RaffleService {
 
   /**
    * Adds a participant on the host (deduplicated by `id` or `name` update).
+   * Ignored if `entriesLocked()` is true.
    */
   addParticipant(participant: RaffleParticipant): void {
+    if (this.entriesLocked()) return;
     this.participants.update((prev) => {
       const idx = prev.findIndex((p) => p.id === participant.id);
       const next =
@@ -371,12 +407,16 @@ export class RaffleService {
 
   /**
    * Sends a participant's photo + name from a smartphone to the stage host,
-   * retrying automatically until the stage host replies with an `ack` (or timeout).
+   * retrying automatically until the stage host replies with an `ack` (or rejects if locked).
    */
   async submitParticipantFromMobile(
     roomId: string,
     participant: RaffleParticipant,
   ): Promise<void> {
+    if (this.entriesLocked()) {
+      throw new Error('Entries are closed — the raffle draw has already started!');
+    }
+
     this.connectToRoom(roomId, false);
 
     // Wait up to 3.5s for at least one WebSocket broker connection to open
@@ -392,16 +432,22 @@ export class RaffleService {
     };
     const serialized = JSON.stringify(wireMsg);
 
-    return new Promise<void>((resolve) => {
+    return new Promise<void>((resolve, reject) => {
       let settled = false;
-      const finish = (): void => {
+      const finishOk = (): void => {
         if (settled) return;
         settled = true;
         this.ackListeners.delete(participant.id);
         resolve();
       };
+      const finishClosed = (err: Error): void => {
+        if (settled) return;
+        settled = true;
+        this.ackListeners.delete(participant.id);
+        reject(err);
+      };
 
-      this.ackListeners.set(participant.id, finish);
+      this.ackListeners.set(participant.id, { resolve: finishOk, reject: finishClosed });
 
       // Publish immediately and retry up to 3 times if no ACK yet
       let attempts = 0;
@@ -413,7 +459,7 @@ export class RaffleService {
           setTimeout(sendAttempt, 1100);
         } else {
           // Even if ACK packet didn't return, resolve after 3 broadcasts
-          setTimeout(finish, 800);
+          setTimeout(finishOk, 800);
         }
       };
 
@@ -438,6 +484,16 @@ export class RaffleService {
       if (!msg || typeof msg !== 'object') return;
 
       if (isHost && msg.type === 'join' && msg.participant && msg.roomId === this.roomId()) {
+        if (this.entriesLocked()) {
+          const closedMsg: RaffleWireMessage = {
+            type: 'closed',
+            roomId: this.roomId(),
+            ackId: msg.participant.id,
+          };
+          this.broadcastRaw(JSON.stringify(closedMsg));
+          return;
+        }
+
         this.addParticipant(msg.participant);
         const ackMsg: RaffleWireMessage = {
           type: 'ack',
@@ -447,7 +503,13 @@ export class RaffleService {
         this.broadcastRaw(JSON.stringify(ackMsg));
       } else if (!isHost && msg.type === 'ack' && msg.ackId) {
         const listener = this.ackListeners.get(msg.ackId);
-        listener?.();
+        listener?.resolve();
+      } else if (!isHost && msg.type === 'closed' && msg.ackId) {
+        this.entriesLocked.set(true);
+        const listener = this.ackListeners.get(msg.ackId);
+        listener?.reject(new Error('Entries are closed — the raffle draw has already started!'));
+      } else if (!isHost && msg.type === 'status' && typeof msg.locked === 'boolean') {
+        this.entriesLocked.set(msg.locked);
       }
     } catch {
       // Ignore malformed JSON messages
@@ -464,12 +526,12 @@ export class RaffleService {
   private loadOrCreateRoomId(): string {
     if (typeof sessionStorage !== 'undefined') {
       const existing = sessionStorage.getItem(ROOM_STORAGE_KEY);
-      if (existing) return existing;
-      const created = 'pth26-' + Math.random().toString(36).slice(2, 7);
+      if (existing && !existing.startsWith('pth26-')) return existing;
+      const created = 'fugu-' + Math.random().toString(36).slice(2, 7);
       sessionStorage.setItem(ROOM_STORAGE_KEY, created);
       return created;
     }
-    return 'pth26-demo';
+    return 'fugu-demo';
   }
 
   private loadInitialBaseUrl(): string {
@@ -497,5 +559,15 @@ export class RaffleService {
     } catch {
       // Ignore quota errors
     }
+  }
+
+  private loadLockedState(roomId: string): boolean {
+    if (typeof sessionStorage === 'undefined') return false;
+    return sessionStorage.getItem(LOCKED_STORAGE_PREFIX + roomId) === 'true';
+  }
+
+  private saveLockedState(roomId: string, locked: boolean): void {
+    if (typeof sessionStorage === 'undefined') return;
+    sessionStorage.setItem(LOCKED_STORAGE_PREFIX + roomId, locked ? 'true' : 'false');
   }
 }
