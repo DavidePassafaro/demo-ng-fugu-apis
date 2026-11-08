@@ -332,14 +332,10 @@ export class ThermalPrinterImageService {
 
       if (options.includeTimestamp) {
         ctx.font = 'bold 13px "Courier New", monospace';
-        const formattedDate = new Date().toLocaleString('it-IT', {
+        const formattedDate = new Date().toLocaleDateString('it-IT', {
           day: '2-digit',
           month: '2-digit',
           year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          hour12: false,
         });
         const dateY = captionLines.length > 1 ? footerY + 66 : captionLines.length === 1 ? footerY + 44 : footerY + 28;
         ctx.fillText(formattedDate, width / 2, dateY);

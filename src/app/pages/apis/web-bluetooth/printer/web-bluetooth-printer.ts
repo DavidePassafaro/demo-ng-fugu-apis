@@ -21,6 +21,9 @@ import {
   WebBluetoothService,
 } from '../web-bluetooth.service';
 
+const DEFAULT_CAPTION = 'PROJECT FUGU DEMO';
+const CONFERENCE_CAPTION = "PORTO TECH HUB '26";
+
 @Component({
   selector: 'app-web-bluetooth-printer',
   imports: [RouterLink],
@@ -52,7 +55,7 @@ export class WebBluetoothPrinter implements OnDestroy {
   readonly contrast = signal(20);
   readonly pthEdition = signal(true);
   readonly removeBg = signal(true);
-  readonly caption = signal('PROJECT FUGU DEMO');
+  readonly caption = signal(CONFERENCE_CAPTION);
   readonly includeTimestamp = signal(true);
 
   readonly hasCapturedPhoto = signal(false);
@@ -405,7 +408,13 @@ export class WebBluetoothPrinter implements OnDestroy {
   }
 
   togglePthEdition(): void {
-    this.pthEdition.update((v) => !v);
+    const enabled = !this.pthEdition();
+    this.pthEdition.set(enabled);
+    // Swap the default caption only if the user hasn't typed a custom one (or loaded a raffle winner).
+    const current = this.caption().trim();
+    if (current === '' || current === DEFAULT_CAPTION || current === CONFERENCE_CAPTION) {
+      this.caption.set(enabled ? CONFERENCE_CAPTION : DEFAULT_CAPTION);
+    }
     this.renderThermalPreview();
   }
 
