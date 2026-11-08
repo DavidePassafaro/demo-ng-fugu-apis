@@ -89,7 +89,6 @@ export class WebBluetoothPrinter implements OnDestroy {
 
   private readonly videoRef = viewChild<ElementRef<HTMLVideoElement>>('video');
   private readonly receiptCanvasRef = viewChild<ElementRef<HTMLCanvasElement>>('receiptCanvas');
-  private readonly paperCanvasRef = viewChild<ElementRef<HTMLCanvasElement>>('paperCanvas');
 
   // ── BLE GATT state ────────────────────────────────────────────────────────
   readonly deviceName = computed(() =>
@@ -141,8 +140,6 @@ export class WebBluetoothPrinter implements OnDestroy {
   readonly dotGain = signal(30);
   readonly pthEdition = signal(true);
   readonly removeBg = signal(true);
-  /** Preview-only: show the receipt as it looks on paper (dot bleed) instead of crisp pixels. */
-  readonly simulatePaper = signal(true);
   readonly caption = signal(CONFERENCE_CAPTION);
   readonly includeTimestamp = signal(true);
 
@@ -650,19 +647,6 @@ export class WebBluetoothPrinter implements OnDestroy {
       includeTimestamp: this.includeTimestamp(),
     });
     this.canvasHeight.set(totalHeight);
-    this.renderPaperPreview();
-  }
-
-  toggleSimulatePaper(): void {
-    this.simulatePaper.update((v) => !v);
-    this.renderPaperPreview();
-  }
-
-  private renderPaperPreview(): void {
-    const source = this.receiptCanvasRef()?.nativeElement;
-    const target = this.paperCanvasRef()?.nativeElement;
-    if (!source || !target || !this.simulatePaper()) return;
-    this.imageService.renderPaperSimulation(source, target);
   }
 
   saveReceiptPng(): void {

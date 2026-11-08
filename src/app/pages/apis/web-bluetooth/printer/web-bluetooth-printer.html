@@ -309,22 +309,11 @@
               }
             </button>
 
-            <button
-              type="button"
-              class="prop-toggle"
-              [class.prop-toggle--selected]="simulatePaper()"
-              (click)="toggleSimulatePaper()"
-              [attr.aria-pressed]="simulatePaper()"
-              title="Preview how dots spread on real thermal paper (preview only, print unchanged)"
-            >
-              🧻 Paper view
-            </button>
           </div>
         </div>
 
         <div class="receipt-stage">
           <div class="thermal-paper" [hidden]="!hasCapturedPhoto()">
-            <!-- Print source: the exact 1-bit dots sent to the printer -->
             <canvas
               #receiptCanvas
               class="receipt-canvas"
@@ -332,17 +321,6 @@
               height="240"
               role="img"
               aria-label="1-bit monochrome thermal receipt preview (384 pixels wide)"
-              [hidden]="simulatePaper()"
-            ></canvas>
-            <!-- Display only: same dots with thermal bleed, as they look on paper -->
-            <canvas
-              #paperCanvas
-              class="receipt-canvas receipt-canvas--paper"
-              width="1152"
-              height="720"
-              role="img"
-              aria-label="Simulated thermal paper print preview"
-              [hidden]="!simulatePaper()"
             ></canvas>
           </div>
 

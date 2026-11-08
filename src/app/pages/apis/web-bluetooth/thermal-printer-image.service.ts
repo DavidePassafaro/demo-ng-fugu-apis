@@ -55,12 +55,6 @@ export const PRINT_TUNING_PRESETS: Record<PrintTuningPresetId, PrintTuning> = {
 export const PRINTER_CONSUME_BYTES_PER_SEC = 40 * 8 * (THERMAL_PRINT_WIDTH / 8);
 export const PRINTER_MAX_BYTES_AHEAD = 2048;
 
-/**
- * Printed dot diameter relative to the 0.125mm dot pitch on the NETUM NT-1809DD.
- * Raise it if the paper still looks darker than the simulated preview, lower it if lighter.
- */
-export const PAPER_DOT_SPREAD = 1.25;
-
 export function clampPrintTuning(t: PrintTuning): PrintTuning {
   const clamp = (v: number, { min, max }: { min: number; max: number }): number =>
     Math.max(min, Math.min(max, Math.round(Number.isFinite(v) ? v : min)));
@@ -441,71 +435,6 @@ export class ThermalPrinterImageService {
     const line1 = raw.slice(0, maxChars);
     const line2 = raw.slice(maxChars, maxChars * 2);
     return line2.length > 0 ? [line1, line2] : [line1];
-  }
-
-  /**
-   * Renders a display-only simulation of how the 1-bit receipt looks on real thermal paper.
-   * Each printed dot spreads beyond its 0.125mm cell (heat bleed), so dithered midtones merge
-   * and come out darker than the crisp pixel preview. The print canvas is never modified.
-   *
-   * @param spread Printed dot diameter relative to the dot pitch (1 = no bleed).
-   */
-  renderPaperSimulation(source: HTMLCanvasElement, target: HTMLCanvasElement, spread = PAPER_DOT_SPREAD): void {
-    const srcCtx = source.getContext('2d');
-    const dstCtx = target.getContext('2d');
-    if (!srcCtx || !dstCtx) return;
-
-    const SCALE = 3;
-    const w = source.width;
-    const h = source.height;
-    const W = w * SCALE;
-    const H = h * SCALE;
-    target.width = W;
-    target.height = H;
-
-    const src = srcCtx.getImageData(0, 0, w, h).data;
-    const ink = new Uint8Array(W * H);
-
-    // Disc stamp around the dot centre, in output pixels
-    const radius = (spread * SCALE) / 2;
-    const reach = Math.ceil(radius);
-    const centre = (SCALE - 1) / 2;
-    const stamp: [number, number][] = [];
-    for (let dy = -reach; dy <= reach + SCALE; dy++) {
-      for (let dx = -reach; dx <= reach + SCALE; dx++) {
-        const ox = dx - centre;
-        const oy = dy - centre;
-        if (ox * ox + oy * oy <= radius * radius) stamp.push([dx, dy]);
-      }
-    }
-
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        const i = (y * w + x) * 4;
-        const isBlack = src[i + 3] >= 128 && 0.299 * src[i] + 0.587 * src[i + 1] + 0.114 * src[i + 2] < 128;
-        if (!isBlack) continue;
-        const baseX = x * SCALE;
-        const baseY = y * SCALE;
-        for (const [dx, dy] of stamp) {
-          const px = baseX + dx;
-          const py = baseY + dy;
-          if (px >= 0 && px < W && py >= 0 && py < H) ink[py * W + px] = 1;
-        }
-      }
-    }
-
-    const out = dstCtx.createImageData(W, H);
-    const o = out.data;
-    for (let p = 0; p < W * H; p++) {
-      const j = p * 4;
-      if (ink[p]) {
-        o[j] = 30; o[j + 1] = 29; o[j + 2] = 34; // thermal black (slightly blue-grey)
-      } else {
-        o[j] = 248; o[j + 1] = 246; o[j + 2] = 240; // receipt paper
-      }
-      o[j + 3] = 255;
-    }
-    dstCtx.putImageData(out, 0, 0);
   }
 
   /**

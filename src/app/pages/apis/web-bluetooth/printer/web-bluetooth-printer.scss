@@ -360,8 +360,6 @@
 }
 
 .receipt-canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; }
-.receipt-canvas[hidden] { display: none; }
-.receipt-canvas--paper { image-rendering: auto; }
 
 .caption-controls {
   display: flex;
