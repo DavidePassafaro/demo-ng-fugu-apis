@@ -100,7 +100,7 @@
           <div>
             <h2 id="participants-heading" class="section-title">2. Joined Participants</h2>
             <p class="participants-subtitle">
-              Photos remain hidden until you start the reveal animation!
+              Everyone who scanned the QR code and sent a selfie.
             </p>
           </div>
           <div class="counter-pill" aria-live="polite">
@@ -115,12 +115,10 @@
             <p>Waiting for participants to scan the QR code and send their selfie…</p>
           </div>
         } @else {
-          <ul class="mystery-grid" role="list">
-            @for (p of raffleService.participants(); track p.id; let idx = $index) {
-              <li class="mystery-chip">
-                <span class="mystery-avatar" aria-hidden="true">🎭</span>
-                <span class="mystery-name">{{ p.name }}</span>
-                <span class="mystery-num">#{{ idx + 1 }}</span>
+          <ul class="photo-mosaic" role="list" aria-label="Participant photos">
+            @for (p of raffleService.participants(); track p.id) {
+              <li class="photo-tile" [title]="p.name">
+                <img [src]="p.photoDataUrl" [alt]="p.name" />
               </li>
             }
           </ul>
@@ -152,76 +150,85 @@
 
   } @else {
 
-    <!-- PHASE 2 & 3: PHOTO-BY-PHOTO REVEAL + ROULETTE + WINNER -->
-    <section class="raffle-card stage-card" aria-label="Raffle reveal stage">
+    <!-- PHASE 2 & 3: MOSAIC + CENTRE MODAL ROULETTE + WINNER -->
+    <section class="raffle-card stage-card" aria-label="Raffle draw stage">
       <div class="stage-header">
-        <div class="stage-status">
-          @if (phase() === 'revealing') {
-            <span class="stage-pill stage-pill--reveal">
-              ✨ Revealing photos… ({{ revealedCount() }} / {{ raffleService.participants().length }})
-            </span>
-          } @else if (phase() === 'roulette') {
-            <span class="stage-pill stage-pill--roulette">
-              🎲 Selecting random winner…
-            </span>
-          } @else if (phase() === 'winner') {
-            <span class="stage-pill stage-pill--winner">
-              🏆 We have a Winner!
-            </span>
-          }
-        </div>
-
+        <h2 class="section-title">🎲 Drawing a winner among {{ raffleService.participants().length }} participants</h2>
         <div class="stage-actions">
           <button type="button" class="action-btn action-btn--ghost action-btn--sm" (click)="backToLobby()">
             ← Back to QR Lobby
           </button>
-          @if (phase() === 'winner') {
-            <button type="button" class="action-btn action-btn--secondary action-btn--sm" (click)="startRaffleAnimation()">
+        </div>
+      </div>
+
+      <ul class="photo-mosaic photo-mosaic--stage" role="list" aria-label="Participant photos">
+        @for (p of raffleService.participants(); track p.id; let idx = $index) {
+          <li
+            class="photo-tile"
+            [class.photo-tile--active]="activeSpotlightIndex() === idx"
+            [class.photo-tile--dimmed]="phase() === 'winner' && activeSpotlightIndex() !== idx"
+            [title]="p.name"
+          >
+            <img [src]="p.photoDataUrl" [alt]="p.name" />
+          </li>
+        }
+      </ul>
+    </section>
+
+    <!-- Centre modal: cycles through photos, then lands on the winner -->
+    <div class="draw-backdrop">
+      <div
+        class="draw-modal"
+        [class.draw-modal--winner]="phase() === 'winner'"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="draw-modal-title"
+      >
+        @if (phase() === 'winner' && winner(); as win) {
+          <span id="draw-modal-title" class="draw-kicker draw-kicker--winner">🏆 We have a winner!</span>
+          <img [src]="win.photoDataUrl" [alt]="win.name" class="draw-photo" />
+          <p class="draw-name" aria-live="assertive">{{ win.name }}</p>
+          <div class="draw-actions">
+            <button
+              #printWinnerBtn
+              type="button"
+              class="action-btn action-btn--success action-btn--lg"
+              (click)="configureAndPrintWinner()"
+            >
+              🖨️ Print Sticker →
+            </button>
+            <button type="button" class="action-btn action-btn--secondary" (click)="startRaffleAnimation()">
               🎲 Draw Again
             </button>
-          }
-        </div>
-      </div>
-
-      <!-- Winner Celebration Banner -->
-      @if (phase() === 'winner' && winner(); as win) {
-        <div class="winner-banner" role="alert">
-          <img [src]="win.photoDataUrl" [alt]="win.name" class="winner-banner-photo" />
-          <div class="winner-banner-info">
-            <span class="winner-kicker">🏆 STICKER RAFFLE WINNER</span>
-            <h3 class="winner-name">{{ win.name }}</h3>
-            <p class="winner-hint">
-              Ready to customize dithering, remove background, and print on the 58mm thermal printer!
-            </p>
+            <button type="button" class="action-btn action-btn--ghost" (click)="backToLobby()">
+              Close
+            </button>
           </div>
-          <button
-            type="button"
-            class="action-btn action-btn--success action-btn--lg"
-            (click)="configureAndPrintWinner()"
-          >
-            🖨️ Configure &amp; Print Sticker →
-          </button>
-        </div>
-      }
-
-      <!-- Photo Wall Grid (cards pop in one by one) -->
-      <div class="photo-wall">
-        @for (p of visibleParticipants(); track p.id; let idx = $index) {
-          <article
-            class="polaroid-card"
-            [class.polaroid-card--spotlight]="activeSpotlightIndex() === idx"
-            [class.polaroid-card--winner]="phase() === 'winner' && activeSpotlightIndex() === idx"
-            [class.polaroid-card--dimmed]="phase() === 'winner' && activeSpotlightIndex() !== idx"
-          >
-            <div class="polaroid-img-wrap">
-              <img [src]="p.photoDataUrl" [alt]="p.name" class="polaroid-img" />
-              <span class="polaroid-badge">#{{ idx + 1 }}</span>
-            </div>
-            <div class="polaroid-caption">{{ p.name }}</div>
-          </article>
+        } @else if (spotlightParticipant(); as current) {
+          <span id="draw-modal-title" class="draw-kicker">🎲 Selecting a random winner…</span>
+          <img [src]="current.photoDataUrl" alt="" class="draw-photo draw-photo--spinning" />
+          <p class="draw-name draw-name--muted">{{ current.name }}</p>
         }
       </div>
-    </section>
+
+      @if (phase() === 'winner') {
+        <div class="confetti" aria-hidden="true">
+          @for (c of confetti(); track c.id) {
+            <span
+              class="confetti-piece"
+              [style.--dx.px]="c.dx"
+              [style.--dy.px]="c.dy"
+              [style.--rot.deg]="c.rot"
+              [style.--delay.ms]="c.delay"
+              [style.--dur.ms]="c.duration"
+              [style.background]="c.color"
+              [style.width.px]="c.size"
+              [style.height.px]="c.size * 0.45"
+            ></span>
+          }
+        </div>
+      }
+    </div>
 
   }
 

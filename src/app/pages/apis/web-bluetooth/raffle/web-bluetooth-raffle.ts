@@ -1,16 +1,34 @@
 import {
   Component,
+  ElementRef,
   OnDestroy,
   afterNextRender,
   computed,
   effect,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { RaffleParticipant, RaffleService } from '../raffle.service';
 
-type RafflePhase = 'lobby' | 'revealing' | 'roulette' | 'winner';
+type RafflePhase = 'lobby' | 'roulette' | 'winner';
+
+interface ConfettiPiece {
+  id: number;
+  dx: number;
+  dy: number;
+  rot: number;
+  delay: number;
+  duration: number;
+  size: number;
+  color: string;
+}
+
+const CONFETTI_COLORS = ['#6366f1', '#22c55e', '#eab308', '#ef4444', '#06b6d4', '#ec4899', '#f97316'];
+const CONFETTI_COUNT = 160;
+/** Number of photo swaps in the centre modal before landing on the winner. */
+const ROULETTE_STEPS = 32;
 
 const QR_ESM_CDN = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/+esm';
 
@@ -30,6 +48,9 @@ const DEMO_NAMES = [
   imports: [RouterLink],
   templateUrl: './web-bluetooth-raffle.html',
   styleUrl: './web-bluetooth-raffle.scss',
+  host: {
+    '(document:keydown.escape)': 'onEscape()',
+  },
 })
 export class WebBluetoothRaffle implements OnDestroy {
   protected readonly raffleService = inject(RaffleService);
@@ -44,18 +65,21 @@ export class WebBluetoothRaffle implements OnDestroy {
   readonly showUrlConfig = signal(false);
   readonly copiedLink = signal(false);
 
-  /** Number of participant photos revealed so far during the 'revealing' phase. */
-  readonly revealedCount = signal(0);
-
   /** Index of the currently highlighted participant card during the 'roulette' & 'winner' phases. */
   readonly activeSpotlightIndex = signal<number | null>(null);
 
   /** Selected winner after the roulette animation finishes. */
   readonly winner = signal<RaffleParticipant | null>(null);
 
-  readonly visibleParticipants = computed(() =>
-    this.raffleService.participants().slice(0, this.revealedCount()),
-  );
+  /** Participant currently shown in the centre modal during the roulette. */
+  readonly spotlightParticipant = computed(() => {
+    const idx = this.activeSpotlightIndex();
+    return idx === null ? null : (this.raffleService.participants()[idx] ?? null);
+  });
+
+  readonly confetti = signal<ConfettiPiece[]>([]);
+
+  private readonly printWinnerBtn = viewChild<ElementRef<HTMLButtonElement>>('printWinnerBtn');
 
   private animTimer: ReturnType<typeof setTimeout> | null = null;
   private demoCounter = 0;
@@ -69,12 +93,22 @@ export class WebBluetoothRaffle implements OnDestroy {
       const url = this.raffleService.joinUrl();
       void this.generateQrCode(url);
     });
+
+    // Move focus to the main action when the winner modal appears
+    effect(() => {
+      this.printWinnerBtn()?.nativeElement.focus();
+    });
+  }
+
+  onEscape(): void {
+    if (this.phase() === 'winner') {
+      this.backToLobby();
+    }
   }
 
   /**
-   * Starts the two-stage raffle animation:
-   * 1) Reveals each participant's photo one by one.
-   * 2) Runs an easing roulette spotlight across all cards and picks a random winner.
+   * Starts the draw: locks entries, then a centre modal cycles through random
+   * participant photos (slowing down) and lands on the winner with confetti.
    */
   startRaffleAnimation(): void {
     const list = this.raffleService.participants();
@@ -85,22 +119,8 @@ export class WebBluetoothRaffle implements OnDestroy {
 
     this.clearTimers();
     this.winner.set(null);
-    this.activeSpotlightIndex.set(null);
-    this.revealedCount.set(0);
-    this.phase.set('revealing');
-
-    const revealNext = (): void => {
-      const current = this.revealedCount();
-      const total = this.raffleService.participants().length;
-      if (current < total) {
-        this.revealedCount.set(current + 1);
-        this.animTimer = setTimeout(revealNext, 480);
-      } else {
-        this.animTimer = setTimeout(() => this.startRoulettePhase(), 650);
-      }
-    };
-
-    this.animTimer = setTimeout(revealNext, 250);
+    this.confetti.set([]);
+    this.startRoulettePhase();
   }
 
   /**
@@ -123,6 +143,7 @@ export class WebBluetoothRaffle implements OnDestroy {
     this.phase.set('lobby');
     this.winner.set(null);
     this.activeSpotlightIndex.set(null);
+    this.confetti.set([]);
   }
 
   /**
@@ -157,36 +178,66 @@ export class WebBluetoothRaffle implements OnDestroy {
 
     if (list.length === 1) {
       this.activeSpotlightIndex.set(0);
-      this.animTimer = setTimeout(() => {
-        this.winner.set(list[0]);
-        this.phase.set('winner');
-      }, 700);
+      this.animTimer = setTimeout(() => this.announceWinner(list[0]), 900);
       return;
     }
 
-    const minLoops = 3;
-    const totalSteps = minLoops * list.length + winnerIndex;
     let step = 0;
+    let previous = -1;
 
     const tick = (): void => {
-      const idx = step % list.length;
+      let idx: number;
+      if (step >= ROULETTE_STEPS) {
+        idx = winnerIndex;
+      } else {
+        // Random photo, never the same twice in a row
+        do {
+          idx = Math.floor(Math.random() * list.length);
+        } while (idx === previous);
+      }
+      previous = idx;
       this.activeSpotlightIndex.set(idx);
 
-      if (step >= totalSteps) {
-        this.animTimer = setTimeout(() => {
-          this.winner.set(list[winnerIndex]);
-          this.phase.set('winner');
-        }, 450);
+      if (step >= ROULETTE_STEPS) {
+        this.animTimer = setTimeout(() => this.announceWinner(list[winnerIndex]), 700);
         return;
       }
 
       step++;
-      const progress = step / totalSteps;
-      const delay = Math.round(65 + Math.pow(progress, 2.4) * 340);
+      const progress = step / ROULETTE_STEPS;
+      const delay = Math.round(90 + Math.pow(progress, 2.6) * 520);
       this.animTimer = setTimeout(tick, delay);
     };
 
     tick();
+  }
+
+  private announceWinner(participant: RaffleParticipant): void {
+    this.winner.set(participant);
+    this.phase.set('winner');
+    this.confetti.set(this.createConfetti());
+  }
+
+  /** Radial burst from the modal centre; each piece then falls with gravity (CSS). */
+  private createConfetti(): ConfettiPiece[] {
+    const reduceMotion =
+      typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) return [];
+
+    return Array.from({ length: CONFETTI_COUNT }, (_, id) => {
+      const angle = Math.random() * Math.PI * 2;
+      const distance = 180 + Math.random() * 420;
+      return {
+        id,
+        dx: Math.round(Math.cos(angle) * distance),
+        dy: Math.round(Math.sin(angle) * distance * 0.75 - 120),
+        rot: Math.round(360 + Math.random() * 900) * (Math.random() < 0.5 ? -1 : 1),
+        delay: Math.round(Math.random() * 180),
+        duration: Math.round(1600 + Math.random() * 1400),
+        size: Math.round(8 + Math.random() * 8),
+        color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+      };
+    });
   }
 
   private async generateQrCode(url: string): Promise<void> {
