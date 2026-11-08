@@ -50,7 +50,7 @@ export class RaffleJoin implements OnDestroy {
     this.stopLiveCamera();
 
     if (!navigator.mediaDevices?.getUserMedia) {
-      this.error.set('Live camera not available in this browser — use "Upload / Camera Roll" instead.');
+      this.error.set('Camera not available in this browser. Open this page in Chrome or Safari on your phone.');
       return;
     }
 
@@ -70,7 +70,7 @@ export class RaffleJoin implements OnDestroy {
         }
       }, 30);
     } catch {
-      this.error.set('Could not access live camera — use the "Snap / Choose Photo" button.');
+      this.error.set('Could not access the camera: allow camera access for this page and try again.');
     }
   }
 
@@ -106,52 +106,6 @@ export class RaffleJoin implements OnDestroy {
 
     this.photoDataUrl.set(canvas.toDataURL('image/jpeg', 0.78));
     this.stopLiveCamera();
-  }
-
-  onFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    input.value = '';
-    if (!file) return;
-
-    this.error.set('');
-    this.stopLiveCamera();
-
-    const objectUrl = URL.createObjectURL(file);
-    const img = new Image();
-
-    img.onload = () => {
-      URL.revokeObjectURL(objectUrl);
-      const natW = img.naturalWidth || img.width || 384;
-      const natH = img.naturalHeight || img.height || 288;
-
-      const width = THERMAL_PRINT_WIDTH;
-      const scale = Math.min(width / natW, 420 / natH);
-      const drawW = Math.max(1, Math.round(natW * scale));
-      const drawH = Math.max(1, Math.round(natH * scale));
-      const height = Math.max(160, Math.ceil(drawH / 8) * 8);
-      const offsetX = Math.floor((width - drawW) / 2);
-      const offsetY = Math.floor((height - drawH) / 2);
-
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, width, height);
-      ctx.drawImage(img, offsetX, offsetY, drawW, drawH);
-
-      this.photoDataUrl.set(canvas.toDataURL('image/jpeg', 0.78));
-    };
-
-    img.onerror = () => {
-      URL.revokeObjectURL(objectUrl);
-      this.error.set('Could not load the selected photo.');
-    };
-
-    img.src = objectUrl;
   }
 
   async submitEntry(): Promise<void> {

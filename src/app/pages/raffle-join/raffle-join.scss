@@ -126,14 +126,13 @@
 }
 
 .camera-buttons {
+  // One button → full width; two (Snap / Cancel) → side by side
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
   gap: 0.55rem;
 }
 
-.hidden-file {
-  display: none;
-}
 
 .join-btn {
   display: inline-flex;
@@ -231,4 +230,12 @@
     font-weight: 700;
     font-size: 0.88rem;
   }
+}
+
+.privacy-note {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--color-text-muted);
+  text-align: center;
 }

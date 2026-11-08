@@ -60,7 +60,7 @@
 
         <!-- Step 2: Photo / Selfie -->
         <div class="field-group">
-          <span class="field-label">2. Your Selfie or Photo</span>
+          <span class="field-label">2. Your Selfie</span>
 
           <div class="photo-box">
             @if (isCameraActive()) {
@@ -70,7 +70,7 @@
             } @else {
               <div class="photo-placeholder">
                 <span aria-hidden="true">📸</span>
-                <p>Take a selfie or pick a photo from your phone</p>
+                <p>Take a selfie with your front camera</p>
               </div>
             }
           </div>
@@ -84,18 +84,9 @@
                 Cancel
               </button>
             } @else {
-              <label class="join-btn join-btn--secondary">
-                📱 Camera / Gallery
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="user"
-                  class="hidden-file"
-                  (change)="onFileSelected($event)"
-                />
-              </label>
-              <button type="button" class="join-btn join-btn--secondary" (click)="startLiveCamera()">
-                🎥 Live Webcam
+              <!-- Selfies only: live front camera, no gallery uploads -->
+              <button type="button" class="join-btn join-btn--primary" (click)="startLiveCamera()">
+                {{ photoDataUrl() ? '🔄 Retake selfie' : '📸 Take a selfie' }}
               </button>
             }
           </div>
@@ -105,9 +96,15 @@
           <p class="join-alert" role="alert">{{ error() }}</p>
         }
 
+        <p id="privacy-note" class="privacy-note">
+          🔓 Your name and photo travel through a <strong>public</strong> MQTT server to reach the stage screen.
+          Join only if you're OK with that.
+        </p>
+
         <!-- Step 3: Submit -->
         <button
           type="submit"
+          aria-describedby="privacy-note"
           class="join-btn join-btn--submit"
           [disabled]="isSubmitting() || !participantName().trim() || !photoDataUrl()"
         >
