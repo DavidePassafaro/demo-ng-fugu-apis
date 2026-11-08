@@ -98,6 +98,15 @@ export const FUGU_APIS: FuguApi[] = [
     available: true,
     constraints: ['device-required'],
   },
+  {
+    id: 'web-usb',
+    name: 'WebUSB API',
+    description: 'Same thermal photo booth over the USB cable: bulk transfers with built-in flow control, one continuous print.',
+    path: '/apis/web-usb',
+    icon: '🔌',
+    available: true,
+    constraints: ['device-required'],
+  },
   // Mobile only
   {
     id: 'contact-picker',

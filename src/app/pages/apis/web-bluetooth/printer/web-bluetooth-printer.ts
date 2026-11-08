@@ -9,7 +9,8 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { WebUsbPrinterService } from '../../web-usb/web-usb-printer.service';
 import { RaffleParticipant, RaffleService } from '../raffle.service';
 import {
   DitherMode,
@@ -24,6 +25,25 @@ import {
 } from '../thermal-printer-image.service';
 
 const PRINT_TUNING_STORAGE_KEY = 'fugu_print_tuning_v2';
+const RELIABLE_WRITES_STORAGE_KEY = 'fugu_print_reliable_writes';
+const PHOTO_SINGLE_BLOCK_STORAGE_KEY = 'fugu_print_photo_single_block';
+
+function loadFlag(key: string, fallback: boolean): boolean {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw === null ? fallback : raw === 'true';
+  } catch {
+    return fallback;
+  }
+}
+
+function loadReliableWrites(): boolean {
+  try {
+    return localStorage.getItem(RELIABLE_WRITES_STORAGE_KEY) !== 'false';
+  } catch {
+    return true;
+  }
+}
 
 function loadPrintTuning(): PrintTuning {
   const fallback = PRINT_TUNING_PRESETS.fast;
@@ -41,6 +61,9 @@ import {
   WebBluetoothService,
 } from '../web-bluetooth.service';
 
+/** Which Fugu API carries the ESC/POS bytes: set per route (`data.transport`). */
+export type PrinterTransport = 'bluetooth' | 'usb';
+
 const DEFAULT_CAPTION = 'PROJECT FUGU DEMO';
 const CONFERENCE_CAPTION = "PORTO TECH HUB '26";
 
@@ -52,6 +75,15 @@ const CONFERENCE_CAPTION = "PORTO TECH HUB '26";
 })
 export class WebBluetoothPrinter implements OnDestroy {
   protected readonly bluetoothService = inject(WebBluetoothService);
+  protected readonly usbService = inject(WebUsbPrinterService);
+
+  /** Same photo booth for both APIs: only the transport (and its inspector panel) changes. */
+  readonly transport: PrinterTransport =
+    inject(ActivatedRoute).snapshot.data['transport'] === 'usb' ? 'usb' : 'bluetooth';
+  readonly isUsb = this.transport === 'usb';
+  readonly isConnected = computed(() =>
+    this.isUsb ? this.usbService.isConnected() : this.bluetoothService.isPrinterConnected(),
+  );
   protected readonly raffleService = inject(RaffleService);
   private readonly imageService = inject(ThermalPrinterImageService);
 
@@ -60,8 +92,10 @@ export class WebBluetoothPrinter implements OnDestroy {
   private readonly paperCanvasRef = viewChild<ElementRef<HTMLCanvasElement>>('paperCanvas');
 
   // ── BLE GATT state ────────────────────────────────────────────────────────
-  readonly deviceName = computed(
-    () => this.bluetoothService.printerDevice()?.name || 'BLE Thermal Printer',
+  readonly deviceName = computed(() =>
+    this.isUsb
+      ? this.usbService.deviceName()
+      : this.bluetoothService.printerDevice()?.name || 'BLE Thermal Printer',
   );
   readonly gattDetails = signal<GattDetails | null>(null);
   readonly printProgress = signal<number | null>(null);
@@ -74,6 +108,18 @@ export class WebBluetoothPrinter implements OnDestroy {
   readonly tuningLimits = PRINT_TUNING_LIMITS;
   readonly tuningPresetIds: PrintTuningPresetId[] = ['safe', 'balanced', 'fast'];
   readonly printTuning = signal<PrintTuning>(loadPrintTuning());
+  /**
+   * Acknowledged GATT writes for every packet. Unacknowledged packets can be silently
+   * dropped when the printer's buffer is full (it then waits forever for the missing
+   * raster bytes). With acknowledged writes the printer rejects a packet instead
+   * ("GATT operation failed"), and we wait and resend it: real flow control.
+   */
+  readonly reliableWrites = signal(loadReliableWrites());
+  /**
+   * Send the whole photo as one `GS v 0` command: every raster command boundary
+   * leaves a thin white line, so none should fall inside the photo.
+   */
+  readonly photoSingleBlock = signal(loadFlag(PHOTO_SINGLE_BLOCK_STORAGE_KEY, true));
   readonly activeTuningPreset = computed<PrintTuningPresetId | null>(() => {
     const t = this.printTuning();
     return (
@@ -85,7 +131,11 @@ export class WebBluetoothPrinter implements OnDestroy {
   });
 
   // ── Receipt & Camera UI state ─────────────────────────────────────────────
-  readonly ditherMode = signal<DitherMode>('floyd-steinberg');
+  readonly ditherMode = signal<DitherMode>('atkinson');
+  readonly ditherOptions: { id: DitherMode; label: string; hint: string }[] = [
+    { id: 'atkinson', label: '📷 Photo', hint: 'Atkinson dithering: shades as fine grain' },
+    { id: 'threshold', label: '✒️ Stencil', hint: 'Threshold: bold black & white silhouette' },
+  ];
   readonly brightness = signal(10);
   readonly contrast = signal(20);
   readonly dotGain = signal(30);
@@ -109,6 +159,7 @@ export class WebBluetoothPrinter implements OnDestroy {
 
   private writeCharacteristic: BluetoothRemoteGATTCharacteristic | null = null;
   private mediaStream: MediaStream | null = null;
+  private cameraStartToken = 0;
   private sourceCanvas: HTMLCanvasElement | null = null;
   private foregroundMask: Uint8Array | null = null;
 
@@ -122,6 +173,8 @@ export class WebBluetoothPrinter implements OnDestroy {
       const tuning = this.printTuning();
       try {
         localStorage.setItem(PRINT_TUNING_STORAGE_KEY, JSON.stringify(tuning));
+        localStorage.setItem(RELIABLE_WRITES_STORAGE_KEY, String(this.reliableWrites()));
+        localStorage.setItem(PHOTO_SINGLE_BLOCK_STORAGE_KEY, String(this.photoSingleBlock()));
       } catch {
         // Storage unavailable: keep tuning in memory only.
       }
@@ -139,13 +192,23 @@ export class WebBluetoothPrinter implements OnDestroy {
         void this.loadRaffleWinner(winner);
       }
 
-      if (this.bluetoothService.isPrinterConnected()) {
-        void this.openPrinterConnection();
-        if (!winner && this.isCameraSupported) {
-          void this.startCamera();
-        }
-      }
+      void this.initTransport(!!winner);
     });
+  }
+
+  private async initTransport(hasWinner: boolean): Promise<void> {
+    if (this.isUsb) {
+      // Direct page load: reopen a printer granted in a previous visit
+      await this.usbService.restoreGrantedPrinter().catch(() => undefined);
+    }
+    if (!this.isConnected()) return;
+
+    if (!this.isUsb) {
+      void this.openPrinterConnection();
+    }
+    if (!hasWinner && this.isCameraSupported) {
+      void this.startCamera();
+    }
   }
 
   // ── Device management (Web Bluetooth GATT) ────────────────────────────────
@@ -224,6 +287,10 @@ export class WebBluetoothPrinter implements OnDestroy {
    * @param data {Uint8Array}
    */
   private async sendEscPosBytes(data: Uint8Array): Promise<void> {
+    if (this.isUsb) {
+      return this.sendEscPosBytesUsb(data);
+    }
+
     const device = this.bluetoothService.printerDevice();
     if (!device) {
       throw new Error('No Bluetooth thermal printer paired.');
@@ -242,6 +309,31 @@ export class WebBluetoothPrinter implements OnDestroy {
       this.printTuning(),
     );
     const totalChunks = Math.ceil(data.byteLength / CHUNK_SIZE);
+
+    const canWithResponse = characteristic.properties.write;
+    const canWithoutResponse = characteristic.properties.writeWithoutResponse;
+    const acked = canWithResponse && (this.reliableWrites() || !canWithoutResponse);
+    this.gattDetails.update((g) =>
+      g ? { ...g, writeMode: acked ? 'writeWithResponse (retry when busy)' : 'writeWithoutResponse' } : g,
+    );
+
+    const MAX_RETRIES = 25;
+    const writeChunk = async (chunk: Uint8Array<ArrayBuffer>): Promise<void> => {
+      if (!acked) {
+        await characteristic.writeValueWithoutResponse(chunk);
+        return;
+      }
+      for (let attempt = 0; ; attempt++) {
+        try {
+          await characteristic.writeValueWithResponse(chunk);
+          return;
+        } catch (err) {
+          // Printer buffer full (or busy): back off and resend the same packet
+          if (attempt >= MAX_RETRIES || !device.gatt?.connected) throw err;
+          await new Promise((resolve) => setTimeout(resolve, Math.min(60 * (attempt + 1), 600)));
+        }
+      }
+    };
 
     // Flow control: never stay more than ~2 KB ahead of what the printer can physically
     // print, otherwise its receive buffer overflows, bytes get dropped, and it hangs
@@ -265,10 +357,14 @@ export class WebBluetoothPrinter implements OnDestroy {
         }
 
         // 👇🏻👇🏻👇🏻
-        if (characteristic.properties.writeWithoutResponse && characteristic.writeValueWithoutResponse) {
-          await characteristic.writeValueWithoutResponse(chunk);
-        } else {
-          await characteristic.writeValue(chunk);
+        try {
+          await writeChunk(chunk);
+        } catch (err) {
+          const reason = err instanceof Error ? err.message : String(err);
+          throw new Error(
+            `GATT write failed at chunk ${i + 1}/${totalChunks} (${CHUNK_SIZE} bytes): ${reason}. ` +
+              'Power-cycle the printer and try a smaller chunk size in Print tuning.',
+          );
         }
         bytesSent += chunk.byteLength;
 
@@ -289,10 +385,27 @@ export class WebBluetoothPrinter implements OnDestroy {
         this.recentPackets.update((prev) => [snapshot, ...prev].slice(0, 8));
         this.printProgress.set(Math.round(((i + 1) / totalChunks) * 100));
 
-        if (i < totalChunks - 1) {
+        // No artificial delay with acknowledged writes: the ack already paces the stream
+        if (i < totalChunks - 1 && !acked) {
           await new Promise((resolve) => setTimeout(resolve, INTER_PACKET_DELAY_MS));
         }
       }
+    } finally {
+      setTimeout(() => this.printProgress.set(null), 600);
+    }
+  }
+
+  /**
+   * WebUSB path: bulk transfers with built-in flow control, logged in the same inspector.
+   */
+  private async sendEscPosBytesUsb(data: Uint8Array): Promise<void> {
+    this.printProgress.set(0);
+    try {
+      await this.usbService.send(data, (snapshot) => {
+        this.lastPacket.set(snapshot);
+        this.recentPackets.update((prev) => [snapshot, ...prev].slice(0, 8));
+        this.printProgress.set(Math.round((snapshot.chunkIndex / snapshot.totalChunks) * 100));
+      });
     } finally {
       setTimeout(() => this.printProgress.set(null), 600);
     }
@@ -308,7 +421,14 @@ export class WebBluetoothPrinter implements OnDestroy {
     if (!canvas) return;
 
     try {
-      const escPosBytes = this.imageService.encodeCanvasToEscPos(canvas, 4, this.printTuning().bandHeight);
+      const { headerHeight, imgHeight } = this.imageService.lastReceiptLayout;
+      const breaks = this.photoSingleBlock() ? [headerHeight, headerHeight + imgHeight] : null;
+      const escPosBytes = this.imageService.encodeCanvasToEscPos(
+        canvas,
+        4,
+        this.printTuning().bandHeight,
+        breaks,
+      );
       await this.sendEscPosBytes(escPosBytes);
     } catch (err) {
       this.printError.set(
@@ -353,6 +473,7 @@ export class WebBluetoothPrinter implements OnDestroy {
   async startCamera(): Promise<void> {
     this.cameraError.set('');
     this.stopCamera();
+    const startToken = ++this.cameraStartToken;
 
     if (!this.isCameraSupported) {
       this.cameraError.set('Camera API (navigator.mediaDevices.getUserMedia) is not available.');
@@ -372,6 +493,12 @@ export class WebBluetoothPrinter implements OnDestroy {
       });
 
 
+      // A newer startCamera()/stopCamera() call superseded this one: drop this stream
+      if (startToken !== this.cameraStartToken) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
+
       this.mediaStream = stream;
       this.isCameraActive.set(true);
 
@@ -381,6 +508,10 @@ export class WebBluetoothPrinter implements OnDestroy {
         await video.play();
       }
     } catch (err) {
+      // "The play() request was interrupted by a new load request": harmless, a newer stream took over
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        return;
+      }
       this.cameraError.set(
         err instanceof Error ? err.message : 'Could not access the camera.',
       );
@@ -388,6 +519,7 @@ export class WebBluetoothPrinter implements OnDestroy {
   }
 
   stopCamera(): void {
+    this.cameraStartToken++;
     if (this.mediaStream) {
       for (const track of this.mediaStream.getTracks()) {
         track.stop();
@@ -461,6 +593,14 @@ export class WebBluetoothPrinter implements OnDestroy {
 
   updateTuning(patch: Partial<PrintTuning>): void {
     this.printTuning.update((t) => clampPrintTuning({ ...t, ...patch }));
+  }
+
+  togglePhotoSingleBlock(): void {
+    this.photoSingleBlock.update((v) => !v);
+  }
+
+  toggleReliableWrites(): void {
+    this.reliableWrites.update((v) => !v);
   }
 
   updateDotGain(val: number): void {

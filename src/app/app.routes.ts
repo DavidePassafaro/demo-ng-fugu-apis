@@ -60,6 +60,34 @@ export const routes: Routes = [
           },
           {
             path: 'printer',
+            data: { transport: 'bluetooth' },
+            loadComponent: () =>
+              import('./pages/apis/web-bluetooth/printer/web-bluetooth-printer').then(
+                (m) => m.WebBluetoothPrinter,
+              ),
+          },
+          {
+            path: 'raffle',
+            loadComponent: () =>
+              import('./pages/apis/web-bluetooth/raffle/web-bluetooth-raffle').then(
+                (m) => m.WebBluetoothRaffle,
+              ),
+          },
+        ],
+      },
+      {
+        // Same photo booth + raffle as Web Bluetooth, over the printer's USB cable
+        path: 'web-usb',
+        loadComponent: () => import('./pages/apis/web-usb/web-usb').then((m) => m.WebUsb),
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./pages/apis/web-usb/connect/web-usb-connect').then((m) => m.WebUsbConnect),
+          },
+          {
+            path: 'printer',
+            data: { transport: 'usb' },
             loadComponent: () =>
               import('./pages/apis/web-bluetooth/printer/web-bluetooth-printer').then(
                 (m) => m.WebBluetoothPrinter,

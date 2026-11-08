@@ -517,3 +517,11 @@
 .tuning-preset {
   text-transform: capitalize;
 }
+
+.tuning-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+}

@@ -5,7 +5,12 @@ import { Injectable } from '@angular/core';
  */
 export const THERMAL_PRINT_WIDTH = 384;
 
-export type DitherMode = 'floyd-steinberg' | 'atkinson' | 'bayer' | 'threshold';
+/**
+ * - `atkinson` ("Photo"): Atkinson error diffusion, keeps shades as fine grain.
+ *   It spreads only 6/8 of the error, so it stays lighter than Floyd–Steinberg: good for thermal paper.
+ * - `threshold` ("Stencil"): plain 50% cut, bold black & white silhouette.
+ */
+export type DitherMode = 'atkinson' | 'threshold';
 
 /**
  * BLE transport + raster tuning. A faster stream keeps the printer feeding continuously:
@@ -54,7 +59,7 @@ export const PRINTER_MAX_BYTES_AHEAD = 2048;
  * Printed dot diameter relative to the 0.125mm dot pitch on the NETUM NT-1809DD.
  * Raise it if the paper still looks darker than the simulated preview, lower it if lighter.
  */
-export const PAPER_DOT_SPREAD = 1.5;
+export const PAPER_DOT_SPREAD = 1.25;
 
 export function clampPrintTuning(t: PrintTuning): PrintTuning {
   const clamp = (v: number, { min, max }: { min: number; max: number }): number =>
@@ -106,13 +111,6 @@ const MEDIAPIPE_WASM_ROOT =
   'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/wasm';
 const SELFIE_SEGMENTER_MODEL =
   'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite';
-
-const BAYER_4X4 = [
-  [0, 8, 2, 10],
-  [12, 4, 14, 6],
-  [3, 11, 1, 9],
-  [15, 7, 13, 5],
-];
 
 const PTH_LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="212" height="37" viewBox="0 0 212 37" fill="none">
   <g fill="#000000">
@@ -338,6 +336,7 @@ export class ThermalPrinterImageService {
     const hasCaption = captionLines.length > 0 || options.includeTimestamp;
     const footerHeight = !hasCaption ? 0 : captionLines.length > 1 ? 78 : 56;
     const totalHeight = headerHeight + imgHeight + footerHeight;
+    this.lastReceiptLayout = { headerHeight, imgHeight, totalHeight };
 
     targetCanvas.width = width;
     targetCanvas.height = totalHeight;
@@ -513,7 +512,20 @@ export class ThermalPrinterImageService {
    * Encodes a 1-bit monochrome canvas (width = 384px) into ESC/POS `GS v 0` raster bands,
    * followed by line feeds (`ESC d n`).
    */
-  encodeCanvasToEscPos(canvas: HTMLCanvasElement, feedLines = 4, bandHeight = 24): Uint8Array {
+  /** Row layout of the last rendered receipt (header / dithered photo / footer). */
+  lastReceiptLayout = { headerHeight: 0, imgHeight: 0, totalHeight: 0 };
+
+  /**
+   * @param breaks When given, raster commands are split only at these rows (e.g. so the
+   *   whole photo is one `GS v 0` block, with no command boundary — and no line — inside it).
+   *   Otherwise the canvas is sliced into fixed `bandHeight` bands.
+   */
+  encodeCanvasToEscPos(
+    canvas: HTMLCanvasElement,
+    feedLines = 4,
+    bandHeight = 24,
+    breaks: number[] | null = null,
+  ): Uint8Array {
     const ctx = canvas.getContext('2d');
     if (!ctx) return new Uint8Array(0);
 
@@ -531,8 +543,20 @@ export class ThermalPrinterImageService {
     // ESC @ (Initialize printer) + ESC a 1 (Center alignment)
     chunks.push(0x1b, 0x40, 0x1b, 0x61, 0x01);
 
-    for (let yStart = 0; yStart < height; yStart += BAND_HEIGHT) {
-      const bandRows = Math.min(BAND_HEIGHT, height - yStart);
+    const bands: [number, number][] = [];
+    if (breaks) {
+      const cuts = [0, ...breaks.filter((r) => r > 0 && r < height).sort((a, b) => a - b), height];
+      for (let i = 0; i < cuts.length - 1; i++) {
+        if (cuts[i + 1] > cuts[i]) bands.push([cuts[i], cuts[i + 1] - cuts[i]]);
+      }
+    } else {
+      for (let yStart = 0; yStart < height; yStart += BAND_HEIGHT) {
+        bands.push([yStart, Math.min(BAND_HEIGHT, height - yStart)]);
+      }
+    }
+    const maxBandRows = Math.max(BAND_HEIGHT, ...bands.map(([, rows]) => rows));
+
+    for (const [yStart, bandRows] of bands) {
 
       // GS v 0 m xL xH yL yH
       chunks.push(
@@ -570,7 +594,7 @@ export class ThermalPrinterImageService {
     // Safety flush: if BLE dropped a few raster bytes, the printer would sit forever waiting
     // for the rest of the last `GS v 0` block and ignore every following job. One band of
     // zeros completes it with blank rows; if nothing was dropped they're NUL bytes and ignored.
-    for (let i = 0; i < BAND_HEIGHT * widthBytes; i++) {
+    for (let i = 0; i < maxBandRows * widthBytes; i++) {
       chunks.push(0x00);
     }
 
@@ -680,24 +704,12 @@ export class ThermalPrinterImageService {
         const oldVal = lum[i];
         let newVal: number;
 
-        if (mode === 'bayer') {
-          const threshold = (BAYER_4X4[y % 4][x % 4] + 0.5) * 16;
-          newVal = oldVal < threshold ? 0 : 255;
-        } else {
-          newVal = oldVal < 128 ? 0 : 255;
-        }
+        newVal = oldVal < 128 ? 0 : 255;
 
         lum[i] = newVal;
         const err = oldVal - newVal;
 
-        if (mode === 'floyd-steinberg') {
-          if (x + 1 < width) lum[i + 1] += (err * 7) / 16;
-          if (y + 1 < height) {
-            if (x > 0) lum[i + width - 1] += (err * 3) / 16;
-            lum[i + width] += (err * 5) / 16;
-            if (x + 1 < width) lum[i + width + 1] += (err * 1) / 16;
-          }
-        } else if (mode === 'atkinson') {
+        if (mode === 'atkinson') {
           const share = err / 8;
           if (x + 1 < width) lum[i + 1] += share;
           if (x + 2 < width) lum[i + 2] += share;

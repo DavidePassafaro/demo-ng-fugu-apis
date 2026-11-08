@@ -1,0 +1,57 @@
+<div class="connect-page">
+
+  <section class="connect-section" aria-labelledby="connect-title">
+    <h2 id="connect-title" class="section-title">Connect a device</h2>
+
+    <div class="connect-actions">
+      <button
+        type="button"
+        class="connect-btn connect-btn--secondary"
+        (click)="request(false)"
+        [disabled]="!usbService.isSupported"
+      >
+        <span aria-hidden="true">🔌</span>
+        Any USB device
+        <span class="connect-btn-hint">Opens the full USB device picker</span>
+      </button>
+
+      <button
+        type="button"
+        class="connect-btn connect-btn--primary"
+        (click)="request(true)"
+        [disabled]="!usbService.isSupported"
+      >
+        <span aria-hidden="true">🖨️</span>
+        USB thermal printer
+        <span class="connect-btn-hint">USB Printer class (0x07), ESC/POS</span>
+      </button>
+    </div>
+
+    @if (error()) {
+      <p class="connect-error" role="alert">{{ error() }}</p>
+    }
+  </section>
+
+  @if (usbService.device(); as device) {
+    <section class="devices-section" aria-labelledby="devices-title">
+      <h2 id="devices-title" class="section-title">Granted device</h2>
+      <ul class="device-list" role="list">
+        <li class="device-item">
+          <div class="device-info">
+            <span class="device-name">{{ usbService.deviceName() }}</span>
+            <div class="device-meta">
+              @if (usbService.details(); as d) {
+                <span class="device-badge">{{ d.vendorId }}:{{ d.productId }}</span>
+                <span class="device-badge device-badge--connected">● Interface {{ d.interfaceNumber }} claimed</span>
+              }
+            </div>
+          </div>
+          <a routerLink="printer" class="device-open-btn" aria-label="Open thermal photo booth">
+            Open photo booth →
+          </a>
+        </li>
+      </ul>
+    </section>
+  }
+
+</div>

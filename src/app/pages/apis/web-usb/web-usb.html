@@ -1,0 +1,36 @@
+<article class="web-bluetooth-page">
+  <header class="page-header">
+    <span class="page-icon" aria-hidden="true">🔌</span>
+    <div>
+      <h1 class="page-title">WebUSB API</h1>
+      <p class="page-subtitle">
+        Same 58mm thermal photo booth, wired: talk to the printer's USB bulk endpoint with
+        <code>navigator.usb.requestDevice()</code> and <code>device.transferOut()</code>.
+        No Bluetooth bottleneck, so the photo prints in one continuous pass.
+      </p>
+    </div>
+  </header>
+
+  @if (!isRafflePage()) {
+    @if (!usbService.isSupported) {
+      <div class="availability-banner availability-banner--error" role="alert">
+        <span aria-hidden="true">⚠️</span>
+        <span>
+          <strong>API not available.</strong>
+          <code>navigator.usb</code> is not supported in this browser.
+          Use Chrome or Edge 61+ on desktop or Android.
+        </span>
+      </div>
+    } @else {
+      <div class="availability-banner availability-banner--ok" role="status">
+        <span aria-hidden="true">✓</span>
+        <span>
+          <strong>API available.</strong>
+          Plug the thermal printer in with its USB cable to get started.
+        </span>
+      </div>
+    }
+  }
+
+  <router-outlet />
+</article>

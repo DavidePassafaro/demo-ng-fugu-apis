@@ -1,10 +1,15 @@
-@if (!bluetoothService.isPrinterConnected()) {
+@if (!isConnected()) {
 
   <div class="printer-unsupported" role="alert">
     <span aria-hidden="true">🚫</span>
-    <h2>No Bluetooth thermal printer connected</h2>
-    <p>Pair and connect your NETUM 58mm Bluetooth 4.0 printer from the connection page first.</p>
-    <a routerLink="/apis/web-bluetooth" class="back-btn">Connect a printer</a>
+    @if (isUsb) {
+      <h2>No USB thermal printer connected</h2>
+      <p>Plug in your 58mm printer with its USB cable and grant access from the connection page first.</p>
+    } @else {
+      <h2>No Bluetooth thermal printer connected</h2>
+      <p>Pair and connect your NETUM 58mm Bluetooth 4.0 printer from the connection page first.</p>
+    }
+    <a routerLink=".." class="back-btn">Connect a printer</a>
   </div>
 
 } @else {
@@ -24,7 +29,7 @@
 
         <div class="quick-actions" role="group" aria-label="Printer actions">
           <a
-            routerLink="/apis/web-bluetooth/raffle"
+            routerLink="../raffle"
             class="action-btn action-btn--primary action-btn--sm"
             aria-label="Open QR Code Live Raffle"
           >
@@ -72,35 +77,17 @@
       <!-- Row 2: Dithering (all 4 modes) + Brightness + Contrast on a single row -->
       <div class="top-bar-row top-bar-row--single">
         <div class="pill-group" role="group" aria-label="1-bit dithering mode">
-          <span class="inline-label">Dither</span>
-          <button
-            type="button"
-            class="prop-toggle"
-            [class.prop-toggle--selected]="ditherMode() === 'floyd-steinberg'"
-            (click)="setDitherMode('floyd-steinberg')"
-            [attr.aria-pressed]="ditherMode() === 'floyd-steinberg'"
-          >Floyd-Steinberg</button>
-          <button
-            type="button"
-            class="prop-toggle"
-            [class.prop-toggle--selected]="ditherMode() === 'atkinson'"
-            (click)="setDitherMode('atkinson')"
-            [attr.aria-pressed]="ditherMode() === 'atkinson'"
-          >Atkinson</button>
-          <button
-            type="button"
-            class="prop-toggle"
-            [class.prop-toggle--selected]="ditherMode() === 'bayer'"
-            (click)="setDitherMode('bayer')"
-            [attr.aria-pressed]="ditherMode() === 'bayer'"
-          >Bayer 4×4</button>
-          <button
-            type="button"
-            class="prop-toggle"
-            [class.prop-toggle--selected]="ditherMode() === 'threshold'"
-            (click)="setDitherMode('threshold')"
-            [attr.aria-pressed]="ditherMode() === 'threshold'"
-          >Threshold</button>
+          <span class="inline-label">Style</span>
+          @for (opt of ditherOptions; track opt.id) {
+            <button
+              type="button"
+              class="prop-toggle"
+              [class.prop-toggle--selected]="ditherMode() === opt.id"
+              (click)="setDitherMode(opt.id)"
+              [attr.aria-pressed]="ditherMode() === opt.id"
+              [title]="opt.hint"
+            >{{ opt.label }}</button>
+          }
         </div>
 
         <label class="slider-inline">
@@ -140,79 +127,91 @@
         </label>
       </div>
 
-      <div class="card-divider" aria-hidden="true"></div>
+      @if (!isUsb) {
+        <div class="card-divider" aria-hidden="true"></div>
 
-      <!-- Row 3: Print tuning (BLE transport speed + raster band height) -->
-      <details class="tuning-panel">
-        <summary class="tuning-summary">
-          <span aria-hidden="true">⚙️</span>
-          Print tuning
-          <span class="tuning-summary-meta">
-            {{ printTuning().chunkSize }} B · {{ printTuning().packetDelayMs }} ms · {{ printTuning().bandHeight }} rows
-          </span>
-        </summary>
+        <!-- Row 3: Print tuning (BLE transport speed + raster band height) -->
+        <details class="tuning-panel">
+          <summary class="tuning-summary">
+            <span aria-hidden="true">⚙️</span>
+            Print tuning
+            <span class="tuning-summary-meta">
+              {{ printTuning().chunkSize }} B · {{ printTuning().packetDelayMs }} ms · {{ printTuning().bandHeight }} rows
+            </span>
+          </summary>
 
-        <p class="tuning-hint">
-          White lines on dark areas mean the printer runs out of data and stops between bands.
-          Faster streaming and taller bands reduce them; the stream is paced to the printer's paper speed
-          so its buffer doesn't overflow. If it stops responding, power-cycle it and step back toward
-          <strong>Safe</strong>.
-        </p>
+          <p class="tuning-hint">
+            White lines on dark areas mean the printer runs out of data and stops between bands.
+            Faster streaming and taller bands reduce them; the stream is paced to the printer's paper speed
+            so its buffer doesn't overflow. If it stops responding, power-cycle it and step back toward
+            <strong>Safe</strong>.
+          </p>
 
-        <div class="top-bar-row top-bar-row--single">
-          <div class="pill-group" role="group" aria-label="Transport preset">
-            <span class="inline-label">Preset</span>
-            @for (id of tuningPresetIds; track id) {
-              <button
-                type="button"
-                class="prop-toggle tuning-preset"
-                [class.prop-toggle--selected]="activeTuningPreset() === id"
-                (click)="applyTuningPreset(id)"
-                [attr.aria-pressed]="activeTuningPreset() === id"
-              >{{ id }}</button>
-            }
+          <div class="top-bar-row top-bar-row--single">
+            <div class="pill-group" role="group" aria-label="Transport preset">
+              <span class="inline-label">Preset</span>
+              @for (id of tuningPresetIds; track id) {
+                <button
+                  type="button"
+                  class="prop-toggle tuning-preset"
+                  [class.prop-toggle--selected]="activeTuningPreset() === id"
+                  (click)="applyTuningPreset(id)"
+                  [attr.aria-pressed]="activeTuningPreset() === id"
+                >{{ id }}</button>
+              }
+            </div>
+
+            <label class="slider-inline">
+              <span class="inline-label">Chunk</span>
+              <input
+                type="range" step="4"
+                [min]="tuningLimits.chunkSize.min" [max]="tuningLimits.chunkSize.max"
+                [value]="printTuning().chunkSize"
+                (input)="updateTuning({ chunkSize: +$any($event.target).value })"
+                class="range-input"
+                aria-label="GATT chunk size in bytes"
+              />
+              <span class="range-val">{{ printTuning().chunkSize }} B</span>
+            </label>
+
+            <label class="slider-inline">
+              <span class="inline-label">Delay</span>
+              <input
+                type="range" step="1"
+                [min]="tuningLimits.packetDelayMs.min" [max]="tuningLimits.packetDelayMs.max"
+                [value]="printTuning().packetDelayMs"
+                (input)="updateTuning({ packetDelayMs: +$any($event.target).value })"
+                class="range-input"
+                aria-label="Delay between GATT writes in milliseconds"
+              />
+              <span class="range-val">{{ printTuning().packetDelayMs }} ms</span>
+            </label>
+
+            <label class="slider-inline">
+              <span class="inline-label">Band</span>
+              <input
+                type="range" step="8"
+                [min]="tuningLimits.bandHeight.min" [max]="tuningLimits.bandHeight.max"
+                [value]="printTuning().bandHeight"
+                (input)="updateTuning({ bandHeight: +$any($event.target).value })"
+                class="range-input"
+                aria-label="Raster band height in rows"
+              />
+              <span class="range-val">{{ printTuning().bandHeight }} rows</span>
+            </label>
           </div>
 
-          <label class="slider-inline">
-            <span class="inline-label">Chunk</span>
-            <input
-              type="range" step="4"
-              [min]="tuningLimits.chunkSize.min" [max]="tuningLimits.chunkSize.max"
-              [value]="printTuning().chunkSize"
-              (input)="updateTuning({ chunkSize: +$any($event.target).value })"
-              class="range-input"
-              aria-label="GATT chunk size in bytes"
-            />
-            <span class="range-val">{{ printTuning().chunkSize }} B</span>
+          <label class="tuning-check">
+            <input type="checkbox" [checked]="reliableWrites()" (change)="toggleReliableWrites()" />
+            <span>Reliable writes: every packet acknowledged, resent if the printer is busy</span>
           </label>
 
-          <label class="slider-inline">
-            <span class="inline-label">Delay</span>
-            <input
-              type="range" step="1"
-              [min]="tuningLimits.packetDelayMs.min" [max]="tuningLimits.packetDelayMs.max"
-              [value]="printTuning().packetDelayMs"
-              (input)="updateTuning({ packetDelayMs: +$any($event.target).value })"
-              class="range-input"
-              aria-label="Delay between GATT writes in milliseconds"
-            />
-            <span class="range-val">{{ printTuning().packetDelayMs }} ms</span>
+          <label class="tuning-check">
+            <input type="checkbox" [checked]="photoSingleBlock()" (change)="togglePhotoSingleBlock()" />
+            <span>Photo as a single raster block: no band boundary (white line) inside the photo</span>
           </label>
-
-          <label class="slider-inline">
-            <span class="inline-label">Band</span>
-            <input
-              type="range" step="8"
-              [min]="tuningLimits.bandHeight.min" [max]="tuningLimits.bandHeight.max"
-              [value]="printTuning().bandHeight"
-              (input)="updateTuning({ bandHeight: +$any($event.target).value })"
-              class="range-input"
-              aria-label="Raster band height in rows"
-            />
-            <span class="range-val">{{ printTuning().bandHeight }} rows</span>
-          </label>
-        </div>
-      </details>
+        </details>
+      }
 
     </section>
 
@@ -402,7 +401,35 @@
       </section>
 
       <!-- Right side: BLE GATT Inspector Panel -->
-      <aside class="ble-panel" aria-label="BLE GATT & ESC/POS packet inspector">
+      <aside
+        class="ble-panel"
+        [attr.aria-label]="isUsb ? 'USB bulk transfer & ESC/POS packet inspector' : 'BLE GATT & ESC/POS packet inspector'"
+      >
+        @if (isUsb) {
+          <h3 class="ble-panel-title">USB bulk OUT <code>GS v 0</code></h3>
+
+          <p class="ble-panel-hint">
+            The 384px 1-bit canvas is encoded as ESC/POS raster (<code>0x1D 0x76 0x30</code>) and sent with
+            <code>device.transferOut()</code>: the printer NAKs while busy, so no bytes are lost.
+          </p>
+
+          @if (usbService.details(); as usb) {
+            <div class="ble-gatt-meta">
+              <div class="ble-meta-row">
+                <span class="ble-meta-label">Vendor : Product</span>
+                <code class="ble-meta-val">{{ usb.vendorId }}:{{ usb.productId }}</code>
+              </div>
+              <div class="ble-meta-row">
+                <span class="ble-meta-label">Interface</span>
+                <code class="ble-meta-val">#{{ usb.interfaceNumber }} · {{ usb.interfaceClass }}</code>
+              </div>
+              <div class="ble-meta-row">
+                <span class="ble-meta-label">Bulk OUT endpoint</span>
+                <code class="ble-meta-val ble-meta-val--accent">EP {{ usb.endpointNumber }} · {{ usb.packetSize }} B packets</code>
+              </div>
+            </div>
+          }
+        } @else {
         <h3 class="ble-panel-title">BLE GATT <code>GS v 0</code></h3>
 
         <p class="ble-panel-hint">
@@ -426,6 +453,7 @@
             </div>
           </div>
         }
+        }
 
         @if (printProgress() !== null) {
           <div class="ble-progress" role="progressbar" [attr.aria-valuenow]="printProgress()" aria-valuemax="100">
@@ -439,8 +467,8 @@
             <p>No packets sent yet.<br>Take a selfie and press <strong>Print Selfie</strong>.</p>
           </div>
         } @else {
-          <div class="ble-log" aria-label="Recent BLE GATT packets">
-            <p class="ble-log-label">GATT write log (last 8 chunks)</p>
+          <div class="ble-log" [attr.aria-label]="isUsb ? 'Recent USB transfers' : 'Recent BLE GATT packets'">
+            <p class="ble-log-label">{{ isUsb ? 'transferOut log' : 'GATT write log' }} (last 8 chunks)</p>
             <div class="ble-log-list" aria-live="polite" aria-atomic="false">
               @for (pkt of recentPackets(); track pkt.timestamp + '-' + pkt.chunkIndex) {
                 <div class="ble-log-row">

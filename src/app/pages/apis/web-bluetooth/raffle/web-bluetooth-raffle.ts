@@ -9,7 +9,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { RaffleParticipant, RaffleService } from '../raffle.service';
 
 type RafflePhase = 'lobby' | 'roulette' | 'winner';
@@ -55,6 +55,7 @@ const DEMO_NAMES = [
 export class WebBluetoothRaffle implements OnDestroy {
   protected readonly raffleService = inject(RaffleService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   readonly isLocalhost =
     typeof window !== 'undefined' &&
@@ -132,7 +133,8 @@ export class WebBluetoothRaffle implements OnDestroy {
     if (!selected) return;
     this.raffleService.removeParticipant(selected.id);
     this.raffleService.pendingWinner.set(selected);
-    void this.router.navigate(['/apis/web-bluetooth/printer']);
+    // Relative: back to the photo booth of the same transport (Bluetooth or USB)
+    void this.router.navigate(['../printer'], { relativeTo: this.route });
   }
 
   /**
