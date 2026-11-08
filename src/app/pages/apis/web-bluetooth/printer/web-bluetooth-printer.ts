@@ -4,6 +4,7 @@ import {
   OnDestroy,
   afterNextRender,
   computed,
+  effect,
   inject,
   signal,
   viewChild,
@@ -12,8 +13,27 @@ import { RouterLink } from '@angular/router';
 import { RaffleParticipant, RaffleService } from '../raffle.service';
 import {
   DitherMode,
+  PRINTER_CONSUME_BYTES_PER_SEC,
+  PRINTER_MAX_BYTES_AHEAD,
+  PRINT_TUNING_LIMITS,
+  PRINT_TUNING_PRESETS,
+  PrintTuning,
+  PrintTuningPresetId,
   ThermalPrinterImageService,
+  clampPrintTuning,
 } from '../thermal-printer-image.service';
+
+const PRINT_TUNING_STORAGE_KEY = 'fugu_print_tuning_v2';
+
+function loadPrintTuning(): PrintTuning {
+  const fallback = PRINT_TUNING_PRESETS.fast;
+  try {
+    const raw = localStorage.getItem(PRINT_TUNING_STORAGE_KEY);
+    return raw ? clampPrintTuning({ ...fallback, ...(JSON.parse(raw) as Partial<PrintTuning>) }) : fallback;
+  } catch {
+    return fallback;
+  }
+}
 import {
   BlePacketSnapshot,
   GattDetails,
@@ -37,6 +57,7 @@ export class WebBluetoothPrinter implements OnDestroy {
 
   private readonly videoRef = viewChild<ElementRef<HTMLVideoElement>>('video');
   private readonly receiptCanvasRef = viewChild<ElementRef<HTMLCanvasElement>>('receiptCanvas');
+  private readonly paperCanvasRef = viewChild<ElementRef<HTMLCanvasElement>>('paperCanvas');
 
   // ── BLE GATT state ────────────────────────────────────────────────────────
   readonly deviceName = computed(
@@ -49,12 +70,29 @@ export class WebBluetoothPrinter implements OnDestroy {
   readonly isPrinting = computed(() => this.printProgress() !== null);
   readonly printError = signal('');
 
+  // ── Print tuning (BLE transport speed + raster band height) ───────────────
+  readonly tuningLimits = PRINT_TUNING_LIMITS;
+  readonly tuningPresetIds: PrintTuningPresetId[] = ['safe', 'balanced', 'fast'];
+  readonly printTuning = signal<PrintTuning>(loadPrintTuning());
+  readonly activeTuningPreset = computed<PrintTuningPresetId | null>(() => {
+    const t = this.printTuning();
+    return (
+      this.tuningPresetIds.find((id) => {
+        const p = PRINT_TUNING_PRESETS[id];
+        return p.chunkSize === t.chunkSize && p.packetDelayMs === t.packetDelayMs && p.bandHeight === t.bandHeight;
+      }) ?? null
+    );
+  });
+
   // ── Receipt & Camera UI state ─────────────────────────────────────────────
   readonly ditherMode = signal<DitherMode>('floyd-steinberg');
   readonly brightness = signal(10);
   readonly contrast = signal(20);
+  readonly dotGain = signal(30);
   readonly pthEdition = signal(true);
   readonly removeBg = signal(true);
+  /** Preview-only: show the receipt as it looks on paper (dot bleed) instead of crisp pixels. */
+  readonly simulatePaper = signal(true);
   readonly caption = signal(CONFERENCE_CAPTION);
   readonly includeTimestamp = signal(true);
 
@@ -80,6 +118,15 @@ export class WebBluetoothPrinter implements OnDestroy {
   };
 
   constructor() {
+    effect(() => {
+      const tuning = this.printTuning();
+      try {
+        localStorage.setItem(PRINT_TUNING_STORAGE_KEY, JSON.stringify(tuning));
+      } catch {
+        // Storage unavailable: keep tuning in memory only.
+      }
+    });
+
     afterNextRender(() => {
       this.imageService.preloadLogo(() => {
         if (this.hasCapturedPhoto()) {
@@ -191,9 +238,17 @@ export class WebBluetoothPrinter implements OnDestroy {
       throw new Error('Printer GATT characteristic is unavailable.');
     }
 
-    const CHUNK_SIZE = 96;
-    const INTER_PACKET_DELAY_MS = 18;
+    const { chunkSize: CHUNK_SIZE, packetDelayMs: INTER_PACKET_DELAY_MS } = clampPrintTuning(
+      this.printTuning(),
+    );
     const totalChunks = Math.ceil(data.byteLength / CHUNK_SIZE);
+
+    // Flow control: never stay more than ~2 KB ahead of what the printer can physically
+    // print, otherwise its receive buffer overflows, bytes get dropped, and it hangs
+    // waiting for the rest of a `GS v 0` block.
+    const MAX_BYTES_AHEAD = PRINTER_MAX_BYTES_AHEAD;
+    const startedAt = performance.now();
+    let bytesSent = 0;
 
     this.printProgress.set(0);
 
@@ -202,12 +257,20 @@ export class WebBluetoothPrinter implements OnDestroy {
         const start = i * CHUNK_SIZE;
         const chunk = data.slice(start, start + CHUNK_SIZE);
 
+        const printedEstimate = ((performance.now() - startedAt) / 1000) * PRINTER_CONSUME_BYTES_PER_SEC;
+        const bytesAhead = bytesSent - printedEstimate;
+        if (bytesAhead > MAX_BYTES_AHEAD) {
+          const waitMs = ((bytesAhead - MAX_BYTES_AHEAD) / PRINTER_CONSUME_BYTES_PER_SEC) * 1000;
+          await new Promise((resolve) => setTimeout(resolve, waitMs));
+        }
+
         // 👇🏻👇🏻👇🏻
         if (characteristic.properties.writeWithoutResponse && characteristic.writeValueWithoutResponse) {
           await characteristic.writeValueWithoutResponse(chunk);
         } else {
           await characteristic.writeValue(chunk);
         }
+        bytesSent += chunk.byteLength;
 
 
         const hexPreview = Array.from(chunk.slice(0, 16))
@@ -245,7 +308,7 @@ export class WebBluetoothPrinter implements OnDestroy {
     if (!canvas) return;
 
     try {
-      const escPosBytes = this.imageService.encodeCanvasToEscPos(canvas, 4);
+      const escPosBytes = this.imageService.encodeCanvasToEscPos(canvas, 4, this.printTuning().bandHeight);
       await this.sendEscPosBytes(escPosBytes);
     } catch (err) {
       this.printError.set(
@@ -392,6 +455,19 @@ export class WebBluetoothPrinter implements OnDestroy {
     this.renderThermalPreview();
   }
 
+  applyTuningPreset(id: PrintTuningPresetId): void {
+    this.printTuning.set({ ...PRINT_TUNING_PRESETS[id] });
+  }
+
+  updateTuning(patch: Partial<PrintTuning>): void {
+    this.printTuning.update((t) => clampPrintTuning({ ...t, ...patch }));
+  }
+
+  updateDotGain(val: number): void {
+    this.dotGain.set(val);
+    this.renderThermalPreview();
+  }
+
   updateContrast(val: number): void {
     this.contrast.set(val);
     this.renderThermalPreview();
@@ -426,6 +502,7 @@ export class WebBluetoothPrinter implements OnDestroy {
       ditherMode: this.ditherMode(),
       brightness: this.brightness(),
       contrast: this.contrast(),
+      dotGain: this.dotGain(),
       removeBg: this.removeBg(),
       foregroundMask: this.foregroundMask,
       pthEdition: this.pthEdition(),
@@ -433,6 +510,19 @@ export class WebBluetoothPrinter implements OnDestroy {
       includeTimestamp: this.includeTimestamp(),
     });
     this.canvasHeight.set(totalHeight);
+    this.renderPaperPreview();
+  }
+
+  toggleSimulatePaper(): void {
+    this.simulatePaper.update((v) => !v);
+    this.renderPaperPreview();
+  }
+
+  private renderPaperPreview(): void {
+    const source = this.receiptCanvasRef()?.nativeElement;
+    const target = this.paperCanvasRef()?.nativeElement;
+    if (!source || !target || !this.simulatePaper()) return;
+    this.imageService.renderPaperSimulation(source, target);
   }
 
   saveReceiptPng(): void {

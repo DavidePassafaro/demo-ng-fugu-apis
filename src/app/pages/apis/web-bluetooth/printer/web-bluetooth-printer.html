@@ -126,7 +126,93 @@
           />
           <span class="range-val">{{ contrast() > 0 ? '+' + contrast() : contrast() }}</span>
         </label>
+
+        <label class="slider-inline" title="Compensates dot spread on thermal paper: higher = lighter midtones">
+          <span class="inline-label">Dot gain</span>
+          <input
+            type="range" min="0" max="100" step="5"
+            [value]="dotGain()"
+            (input)="updateDotGain(+$any($event.target).value)"
+            class="range-input"
+            aria-label="Thermal dot gain compensation"
+          />
+          <span class="range-val">{{ dotGain() }}</span>
+        </label>
       </div>
+
+      <div class="card-divider" aria-hidden="true"></div>
+
+      <!-- Row 3: Print tuning (BLE transport speed + raster band height) -->
+      <details class="tuning-panel">
+        <summary class="tuning-summary">
+          <span aria-hidden="true">⚙️</span>
+          Print tuning
+          <span class="tuning-summary-meta">
+            {{ printTuning().chunkSize }} B · {{ printTuning().packetDelayMs }} ms · {{ printTuning().bandHeight }} rows
+          </span>
+        </summary>
+
+        <p class="tuning-hint">
+          White lines on dark areas mean the printer runs out of data and stops between bands.
+          Faster streaming and taller bands reduce them; the stream is paced to the printer's paper speed
+          so its buffer doesn't overflow. If it stops responding, power-cycle it and step back toward
+          <strong>Safe</strong>.
+        </p>
+
+        <div class="top-bar-row top-bar-row--single">
+          <div class="pill-group" role="group" aria-label="Transport preset">
+            <span class="inline-label">Preset</span>
+            @for (id of tuningPresetIds; track id) {
+              <button
+                type="button"
+                class="prop-toggle tuning-preset"
+                [class.prop-toggle--selected]="activeTuningPreset() === id"
+                (click)="applyTuningPreset(id)"
+                [attr.aria-pressed]="activeTuningPreset() === id"
+              >{{ id }}</button>
+            }
+          </div>
+
+          <label class="slider-inline">
+            <span class="inline-label">Chunk</span>
+            <input
+              type="range" step="4"
+              [min]="tuningLimits.chunkSize.min" [max]="tuningLimits.chunkSize.max"
+              [value]="printTuning().chunkSize"
+              (input)="updateTuning({ chunkSize: +$any($event.target).value })"
+              class="range-input"
+              aria-label="GATT chunk size in bytes"
+            />
+            <span class="range-val">{{ printTuning().chunkSize }} B</span>
+          </label>
+
+          <label class="slider-inline">
+            <span class="inline-label">Delay</span>
+            <input
+              type="range" step="1"
+              [min]="tuningLimits.packetDelayMs.min" [max]="tuningLimits.packetDelayMs.max"
+              [value]="printTuning().packetDelayMs"
+              (input)="updateTuning({ packetDelayMs: +$any($event.target).value })"
+              class="range-input"
+              aria-label="Delay between GATT writes in milliseconds"
+            />
+            <span class="range-val">{{ printTuning().packetDelayMs }} ms</span>
+          </label>
+
+          <label class="slider-inline">
+            <span class="inline-label">Band</span>
+            <input
+              type="range" step="8"
+              [min]="tuningLimits.bandHeight.min" [max]="tuningLimits.bandHeight.max"
+              [value]="printTuning().bandHeight"
+              (input)="updateTuning({ bandHeight: +$any($event.target).value })"
+              class="range-input"
+              aria-label="Raster band height in rows"
+            />
+            <span class="range-val">{{ printTuning().bandHeight }} rows</span>
+          </label>
+        </div>
+      </details>
 
     </section>
 
@@ -223,11 +309,23 @@
                 ✂️ No background
               }
             </button>
+
+            <button
+              type="button"
+              class="prop-toggle"
+              [class.prop-toggle--selected]="simulatePaper()"
+              (click)="toggleSimulatePaper()"
+              [attr.aria-pressed]="simulatePaper()"
+              title="Preview how dots spread on real thermal paper (preview only, print unchanged)"
+            >
+              🧻 Paper view
+            </button>
           </div>
         </div>
 
         <div class="receipt-stage">
           <div class="thermal-paper" [hidden]="!hasCapturedPhoto()">
+            <!-- Print source: the exact 1-bit dots sent to the printer -->
             <canvas
               #receiptCanvas
               class="receipt-canvas"
@@ -235,6 +333,17 @@
               height="240"
               role="img"
               aria-label="1-bit monochrome thermal receipt preview (384 pixels wide)"
+              [hidden]="simulatePaper()"
+            ></canvas>
+            <!-- Display only: same dots with thermal bleed, as they look on paper -->
+            <canvas
+              #paperCanvas
+              class="receipt-canvas receipt-canvas--paper"
+              width="1152"
+              height="720"
+              role="img"
+              aria-label="Simulated thermal paper print preview"
+              [hidden]="!simulatePaper()"
             ></canvas>
           </div>
 
@@ -297,8 +406,8 @@
         <h3 class="ble-panel-title">BLE GATT <code>GS v 0</code></h3>
 
         <p class="ble-panel-hint">
-          The 384px 1-bit canvas is sliced into 24-row ESC/POS raster bands
-          (<code>0x1D 0x76 0x30</code>) and streamed in 96-byte BLE GATT chunks.
+          The 384px 1-bit canvas is sliced into {{ printTuning().bandHeight }}-row ESC/POS raster bands
+          (<code>0x1D 0x76 0x30</code>) and streamed in {{ printTuning().chunkSize }}-byte BLE GATT chunks.
         </p>
 
         @if (gattDetails(); as gatt) {

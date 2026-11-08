@@ -360,6 +360,8 @@
 }
 
 .receipt-canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; }
+.receipt-canvas[hidden] { display: none; }
+.receipt-canvas--paper { image-rendering: auto; }
 
 .caption-controls {
   display: flex;
@@ -475,3 +477,43 @@
 
 .ble-log-id { font-size: 0.62rem; font-family: 'Courier New', monospace; color: var(--color-accent); font-weight: 700; }
 .ble-log-hex { font-size: 0.6rem; font-family: 'Courier New', monospace; color: var(--color-text-muted); word-break: break-all; }
+
+// ── Print tuning panel ──────────────────────────────────────────────────────
+.tuning-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.tuning-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+  border-radius: 6px;
+
+  &:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 3px;
+  }
+}
+
+.tuning-summary-meta {
+  font-weight: 400;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+.tuning-hint {
+  margin: 0.4rem 0 0.6rem;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  opacity: 0.85;
+}
+
+.tuning-preset {
+  text-transform: capitalize;
+}
