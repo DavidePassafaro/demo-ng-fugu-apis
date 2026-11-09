@@ -3,6 +3,8 @@ import {
   ElementRef,
   OnDestroy,
   afterNextRender,
+  computed,
+  effect,
   inject,
   signal,
   viewChild,
@@ -30,13 +32,43 @@ export class RaffleJoin implements OnDestroy {
   readonly isSubmitted = signal(false);
   readonly error = signal('');
 
-  private readonly participantId =
-    'p_' + Math.random().toString(36).slice(2, 10) + '_' + Date.now().toString(36);
+  /** Kept per room in localStorage so the phone still recognises its win after a reload. */
+  private participantId = '';
   private mediaStream: MediaStream | null = null;
+
+  /** Winner announced by the stage, and whether it's this phone. */
+  readonly winner = this.raffleService.announcedWinner;
+  readonly isWinner = computed(() => {
+    const w = this.winner();
+    return !!w && w.id === this.participantId;
+  });
+
+  readonly confetti = signal<{ id: number; left: number; delay: number; duration: number; color: string; drift: number }[]>([]);
 
   constructor() {
     const roomParam = this.route.snapshot.queryParamMap.get('room') || '';
     this.roomId.set(roomParam);
+    this.participantId = this.loadParticipantId(roomParam);
+
+    // Celebrate on the winner's phone: vibration (Android) + confetti
+    effect(() => {
+      if (!this.isWinner()) return;
+      this.stopLiveCamera();
+      navigator.vibrate?.([250, 120, 250, 120, 600]);
+      const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      if (reduceMotion) return;
+      const colors = ['#6366f1', '#22c55e', '#eab308', '#ef4444', '#06b6d4', '#ec4899', '#f97316'];
+      this.confetti.set(
+        Array.from({ length: 90 }, (_, id) => ({
+          id,
+          left: Math.random() * 100,
+          delay: Math.random() * 900,
+          duration: 2200 + Math.random() * 1800,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          drift: Math.round((Math.random() - 0.5) * 160),
+        })),
+      );
+    });
 
     afterNextRender(() => {
       if (this.roomId()) {
@@ -143,6 +175,20 @@ export class RaffleJoin implements OnDestroy {
     } finally {
       this.isSubmitting.set(false);
     }
+  }
+
+  private loadParticipantId(room: string): string {
+    const fresh = 'p_' + Math.random().toString(36).slice(2, 10) + '_' + Date.now().toString(36);
+    if (!room) return fresh;
+    const key = 'fugu_raffle_pid_' + room;
+    try {
+      const saved = localStorage.getItem(key);
+      if (saved) return saved;
+      localStorage.setItem(key, fresh);
+    } catch {
+      // Storage unavailable: the id lives only for this page load
+    }
+    return fresh;
   }
 
   ngOnDestroy(): void {

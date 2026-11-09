@@ -216,6 +216,8 @@ export class WebBluetoothRaffle implements OnDestroy {
 
   private announceWinner(participant: RaffleParticipant): void {
     this.winner.set(participant);
+    // Notify the phones: the winner sees "You won!", everyone else sees who won
+    this.raffleService.announceWinner(participant);
     this.phase.set('winner');
     this.confetti.set(this.createConfetti());
   }

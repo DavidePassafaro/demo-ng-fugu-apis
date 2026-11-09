@@ -8,7 +8,7 @@ export interface RaffleParticipant {
 }
 
 interface RaffleWireMessage {
-  type: 'join' | 'ack' | 'closed' | 'status';
+  type: 'join' | 'ack' | 'closed' | 'status' | 'winner';
   roomId: string;
   participant?: RaffleParticipant;
   ackId?: string;
@@ -278,6 +278,9 @@ export class RaffleService {
 
   readonly isBrokerConnected = signal(false);
 
+  /** On phones: the winner announced by the stage (null until the draw ends). */
+  readonly announcedWinner = signal<RaffleParticipant | null>(null);
+
   /** Winner selected in the Raffle page, ready to be configured & printed in the Printer page. */
   readonly pendingWinner = signal<RaffleParticipant | null>(null);
 
@@ -367,6 +370,21 @@ export class RaffleService {
     this.broadcastRaw(
       JSON.stringify({ type: 'status', roomId: this.roomId(), locked: true } satisfies RaffleWireMessage),
     );
+  }
+
+  /**
+   * Tells every phone in the room who won. Messages are fire-and-forget (no retained
+   * MQTT messages), so it is repeated a few times for phones whose socket just reconnected.
+   */
+  announceWinner(winner: RaffleParticipant): void {
+    const serialized = JSON.stringify({
+      type: 'winner',
+      roomId: this.roomId(),
+      participant: winner,
+    } satisfies RaffleWireMessage);
+    for (const delay of [0, 1500, 4000]) {
+      setTimeout(() => this.broadcastRaw(serialized), delay);
+    }
   }
 
   /**
@@ -510,6 +528,10 @@ export class RaffleService {
         listener?.reject(new Error('Entries are closed — the raffle draw has already started!'));
       } else if (!isHost && msg.type === 'status' && typeof msg.locked === 'boolean') {
         this.entriesLocked.set(msg.locked);
+        // Room reopened (participants cleared): forget the previous winner
+        if (!msg.locked) this.announcedWinner.set(null);
+      } else if (!isHost && msg.type === 'winner' && msg.participant) {
+        this.announcedWinner.set(msg.participant);
       }
     } catch {
       // Ignore malformed JSON messages

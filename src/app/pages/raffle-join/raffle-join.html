@@ -15,6 +15,24 @@
       <div class="join-alert" role="alert">
         ⚠️ Invalid or missing room code. Please scan the QR code shown on stage.
       </div>
+    } @else if (winner(); as win) {
+
+      @if (isWinner()) {
+        <section class="join-success join-winner" role="alert">
+          <div class="success-icon" aria-hidden="true">🏆</div>
+          <h2>You won!</h2>
+          <img class="winner-photo" [src]="win.photoDataUrl" [alt]="win.name" />
+          <p><strong>Come to the stage</strong> to get your thermal sticker, printed live!</p>
+        </section>
+      } @else {
+        <section class="join-success" role="status" aria-live="polite">
+          <div class="success-icon" aria-hidden="true">🎉</div>
+          <h2>The winner is {{ win.name }}</h2>
+          <img class="winner-photo" [src]="win.photoDataUrl" [alt]="win.name" />
+          <p>Not this time — thanks for playing!</p>
+        </section>
+      }
+
     } @else if (raffleService.entriesLocked() && !isSubmitted()) {
       <section class="join-success" role="status" aria-live="polite">
         <div class="success-icon" aria-hidden="true">🔒</div>
@@ -120,4 +138,19 @@
     }
 
   </div>
+
+  @if (isWinner() && confetti().length) {
+    <div class="join-confetti" aria-hidden="true">
+      @for (c of confetti(); track c.id) {
+        <span
+          class="join-confetti-piece"
+          [style.left.%]="c.left"
+          [style.background]="c.color"
+          [style.--delay.ms]="c.delay"
+          [style.--dur.ms]="c.duration"
+          [style.--drift.px]="c.drift"
+        ></span>
+      }
+    </div>
+  }
 </main>
