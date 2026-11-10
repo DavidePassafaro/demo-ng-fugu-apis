@@ -35,7 +35,11 @@ export class ScreenWakeLock implements OnDestroy {
     this.releaseReason.set('');
 
     try {
+
+      // 👇🏻👇🏻👇🏻
       this.sentinel = await navigator.wakeLock.request('screen');
+
+
       this.isActive.set(true);
 
       this.sentinel.addEventListener('release', () => {
@@ -57,7 +61,11 @@ export class ScreenWakeLock implements OnDestroy {
    */
   async release(): Promise<void> {
     if (!this.sentinel) return;
+
+    // 👇🏻👇🏻👇🏻
     await this.sentinel.release();
+
+
     this.releaseReason.set('Released manually.');
     this.sentinel = null;
   }

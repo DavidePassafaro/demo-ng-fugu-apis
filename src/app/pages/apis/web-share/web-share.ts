@@ -21,7 +21,11 @@ export class WebShare {
    */
   async shareData(data: ShareData): Promise<void> {
     try {
+
+      // 👇🏻👇🏻👇🏻
       await navigator.share(data);
+
+
       this.dataPanel().showSuccess();
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') return;
@@ -37,11 +41,18 @@ export class WebShare {
   async shareFiles(files: File[]): Promise<void> {
     try {
       const data: ShareData = { files };
+
+      // 👇🏻👇🏻👇🏻
       if (!navigator.canShare(data)) {
         this.filesPanel().showError('These files cannot be shared on this device or browser.');
         return;
       }
+
+
+      // 👇🏻👇🏻👇🏻
       await navigator.share(data);
+
+
       this.filesPanel().showSuccess();
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') return;

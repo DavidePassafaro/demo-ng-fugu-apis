@@ -125,11 +125,15 @@ export class GamepadPage implements OnDestroy {
    */
   private poll(): void {
     const states: GamepadState[] = [];
+
+    // 👇🏻👇🏻👇🏻
     for (const gp of navigator.getGamepads()) {
       if (gp && gp.connected) {
         states.push(snapshotGamepad(gp));
       }
     }
+
+
     this.gamepads.set(states);
   }
 
@@ -146,12 +150,16 @@ export class GamepadPage implements OnDestroy {
     if (!actuator) return;
 
     try {
+
+      // 👇🏻👇🏻👇🏻
       await actuator.playEffect('dual-rumble', {
         startDelay: 0,
         duration: params.duration,
         weakMagnitude: params.weakMagnitude,
         strongMagnitude: params.strongMagnitude,
       });
+
+
     } catch {
       // Silently ignore — not all browsers support dual-rumble
     }

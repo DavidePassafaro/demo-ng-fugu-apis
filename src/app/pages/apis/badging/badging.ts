@@ -23,7 +23,11 @@ export class Badging {
   async setBadge(): Promise<void> {
     this.error.set('');
     try {
+
+      // 👇🏻👇🏻👇🏻
       await navigator.setAppBadge(this.count);
+
+
       this.status.set('set');
       this.currentBadge.set(this.count);
     } catch (err) {
@@ -38,7 +42,11 @@ export class Badging {
   async setDot(): Promise<void> {
     this.error.set('');
     try {
+
+      // 👇🏻👇🏻👇🏻
       await navigator.setAppBadge();
+
+
       this.status.set('dot');
       this.currentBadge.set('dot');
     } catch (err) {
@@ -53,7 +61,11 @@ export class Badging {
   async clearBadge(): Promise<void> {
     this.error.set('');
     try {
+
+      // 👇🏻👇🏻👇🏻
       await navigator.clearAppBadge();
+
+
       this.status.set('cleared');
       this.currentBadge.set(null);
     } catch (err) {

@@ -31,8 +31,12 @@ export class FileSystem {
    */
   async openFile(): Promise<void> {
     try {
+
+      // 👇🏻👇🏻👇🏻
       const [handle] = await window.showOpenFilePicker();
       const file = await handle.getFile();
+
+
       const rawContent = await file.text();
 
       const result: FsFileResult = {
@@ -58,6 +62,8 @@ export class FileSystem {
    */
   async saveFile(content: string): Promise<void> {
     try {
+
+      // 👇🏻👇🏻👇🏻
       const handle = await window.showSaveFilePicker({
         suggestedName: 'fugu-demo.txt',
         types: [{ description: 'Text files', accept: { 'text/plain': ['.txt'] } }],
@@ -65,6 +71,7 @@ export class FileSystem {
       const writable = await handle.createWritable();
       await writable.write(content);
       await writable.close();
+
 
       this.savePanel().showSuccess(handle.name);
     } catch (err) {
@@ -80,12 +87,15 @@ export class FileSystem {
    */
   async openDirectory(): Promise<void> {
     try {
+
+      // 👇🏻👇🏻👇🏻
       const dirHandle = await window.showDirectoryPicker();
       const entries: FsDirEntry[] = [];
 
       for await (const [name, handle] of dirHandle) {
         entries.push({ name, kind: handle.kind });
       }
+
 
       this.dirPanel().showEntries(dirHandle.name, entries);
     } catch (err) {

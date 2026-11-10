@@ -48,7 +48,11 @@ export class ContactPicker implements OnInit {
   async ngOnInit(): Promise<void> {
     if (!this.isSupported) return;
     try {
+
+      // 👇🏻👇🏻👇🏻
       const props = await navigator.contacts!.getProperties();
+
+
       this.supportedProperties.set(props);
       // Keep only supported ones in the initial selection
       this.selectedProperties.update(
@@ -94,7 +98,11 @@ export class ContactPicker implements OnInit {
     }
 
     try {
+
+      // 👇🏻👇🏻👇🏻
       const results = await navigator.contacts!.select(props, { multiple: this.multiple() });
+
+
       const picked: PickedContact[] = await Promise.all(
         results.map(async (c) => {
           const contact: PickedContact = {
