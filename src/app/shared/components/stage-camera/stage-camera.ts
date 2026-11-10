@@ -15,6 +15,7 @@ import { filter, map } from 'rxjs';
 import { WebHidService } from '../../../pages/apis/web-hid/web-hid.service';
 import { WebBluetoothService } from '../../../pages/apis/web-bluetooth/web-bluetooth.service';
 import { WebUsbPrinterService } from '../../../pages/apis/web-usb/web-usb-printer.service';
+import { GamepadConnectionService } from '../../../pages/apis/gamepad/gamepad-connection.service';
 
 interface FrameRect {
   x: number;
@@ -32,7 +33,7 @@ const MARGIN = 16;
 
 /**
  * Floating, draggable webcam preview used on stage to show the physical device
- * (tablet, printer…) to the audience. It only exists on device pages while a device
+ * (tablet, printer, gamepad…) to the audience. It only exists on device pages while a device
  * is connected, and releases the camera as soon as that is no longer true.
  */
 @Component({
@@ -48,6 +49,7 @@ export class StageCamera {
   private readonly hid = inject(WebHidService);
   private readonly bluetooth = inject(WebBluetoothService);
   private readonly usb = inject(WebUsbPrinterService);
+  private readonly gamepad = inject(GamepadConnectionService);
 
   private readonly url = toSignal(
     this.router.events.pipe(
@@ -63,6 +65,7 @@ export class StageCamera {
     if (url.startsWith('/apis/web-hid')) return this.hid.isTabletConnected();
     if (url.startsWith('/apis/web-bluetooth')) return this.bluetooth.isPrinterConnected();
     if (url.startsWith('/apis/web-usb')) return this.usb.isConnected();
+    if (url.startsWith('/apis/gamepad')) return this.gamepad.isConnected();
     return false;
   });
 
