@@ -1,0 +1,71 @@
+@if (visible()) {
+  @if (!open()) {
+    <button
+      type="button"
+      class="camera-toggle"
+      (click)="show()"
+      title="Show the device to the audience with a camera"
+    >
+      <span aria-hidden="true">📷</span> Camera
+    </button>
+  } @else if (rect(); as r) {
+    <section
+      class="camera-frame"
+      [class.camera-frame--mirrored]="mirrored()"
+      [style.left.px]="r.x"
+      [style.top.px]="r.y"
+      [style.width.px]="r.width"
+      [style.height.px]="height()"
+      tabindex="0"
+      aria-label="Stage camera. Drag to move, arrow keys to nudge, plus and minus to resize."
+      (pointerdown)="startMove($event)"
+      (pointermove)="onPointerMove($event)"
+      (pointerup)="endGesture($event)"
+      (pointercancel)="endGesture($event)"
+      (keydown)="onKeydown($event)"
+    >
+      <video #video autoplay muted playsinline (loadedmetadata)="onMetadata(video)"></video>
+
+      @if (error()) {
+        <p class="camera-message camera-message--error">{{ error() }}</p>
+      } @else if (!stream()) {
+        <p class="camera-message">Starting camera…</p>
+      }
+
+      <div class="camera-toolbar">
+        @if (cameras().length > 1) {
+          <select
+            #cameraSelect
+            class="camera-select"
+            aria-label="Camera"
+            [value]="activeCameraId() || cameraId()"
+            (change)="selectCamera(cameraSelect.value)"
+          >
+            @for (cam of cameras(); track cam.deviceId; let i = $index) {
+              <option [value]="cam.deviceId">{{ cam.label || 'Camera ' + (i + 1) }}</option>
+            }
+          </select>
+        }
+        <button
+          type="button"
+          class="camera-btn"
+          [attr.aria-pressed]="mirrored()"
+          (click)="mirrored.set(!mirrored())"
+          title="Mirror"
+        >
+          ⇋
+        </button>
+        <button type="button" class="camera-btn" (click)="hide()" title="Close camera">✕</button>
+      </div>
+
+      <span
+        class="resize-handle"
+        aria-hidden="true"
+        (pointerdown)="startResize($event)"
+        (pointermove)="onPointerMove($event)"
+        (pointerup)="endGesture($event)"
+        (pointercancel)="endGesture($event)"
+      ></span>
+    </section>
+  }
+}

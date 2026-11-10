@@ -1,10 +1,11 @@
 import { Component, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { FUGU_APIS, FuguApi } from '../../../fugu-apis.config';
+import { StageCamera } from '../stage-camera/stage-camera';
 
 @Component({
   selector: 'app-apis-layout',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, StageCamera],
   templateUrl: './apis-layout.html',
   styleUrl: './apis-layout.scss',
   host: {
