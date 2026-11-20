@@ -65,7 +65,7 @@ import {
 export type PrinterTransport = 'bluetooth' | 'usb';
 
 const DEFAULT_CAPTION = 'PROJECT FUGU DEMO';
-const CONFERENCE_CAPTION = "PORTO TECH HUB '26";
+const CONFERENCE_CAPTION = "ANGULARDAY '26";
 
 @Component({
   selector: 'app-web-bluetooth-printer',
